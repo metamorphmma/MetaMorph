@@ -758,27 +758,26 @@ async function saveAdminEdit() {
 /* ── Media gallery ── */
 let mediaUploadTargetId = null;
 
+let currentGalleryItems = [];
+
 async function loadMediaGallery(userId) {
   const el = document.getElementById(`media-gallery-${userId}`);
   if (!el) return;
   try {
     const items = await api('GET', `/api/users/${userId}/media`);
+    currentGalleryItems = items;
     if (!items.length) {
       el.innerHTML = '<div class="media-empty">No photos or videos yet.</div>';
       return;
     }
-    el.innerHTML = items.map(item => {
+    el.innerHTML = items.map((item, idx) => {
       const canDelete = me && (me.id === item.uploader_id || me.role === 'admin');
-      const del = canDelete ? `<button class="media-delete" onclick="deleteMedia(${item.id},${userId})" title="Delete">✕</button>` : '';
-      if (item.media_type === 'video') {
-        return `<div class="media-item">
-          <video src="${item.media_url}" controls playsinline class="media-thumb"></video>
-          <div class="media-uploader">by ${esc(item.uploader_name)}</div>
-          ${del}
-        </div>`;
-      }
-      return `<div class="media-item">
-        <img src="${item.media_url}" class="media-thumb" loading="lazy" alt="">
+      const del = canDelete ? `<button class="media-delete" onclick="event.stopPropagation();deleteMedia(${item.id},${userId})" title="Delete">✕</button>` : '';
+      const thumb = item.media_type === 'video'
+        ? `<video src="${item.media_url}" class="media-thumb" playsinline muted preload="metadata"></video><div class="media-play-icon">▶</div>`
+        : `<img src="${item.media_url}" class="media-thumb" loading="lazy" alt="">`;
+      return `<div class="media-item" onclick="openLightbox(${idx})">
+        ${thumb}
         <div class="media-uploader">by ${esc(item.uploader_name)}</div>
         ${del}
       </div>`;
@@ -786,6 +785,54 @@ async function loadMediaGallery(userId) {
   } catch {
     el.innerHTML = '<div class="media-empty">Could not load media.</div>';
   }
+}
+
+/* ── Lightbox ── */
+let lbIndex    = 0;
+let lbTouchX   = 0;
+
+function openLightbox(index) {
+  lbIndex = index;
+  renderLightbox();
+  document.getElementById('lightbox').hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+
+function renderLightbox() {
+  const item = currentGalleryItems[lbIndex];
+  const el   = document.getElementById('lightbox-content');
+  // Stop any playing video first
+  const old = el.querySelector('video');
+  if (old) old.pause();
+  if (item.media_type === 'video') {
+    el.innerHTML = `<video src="${item.media_url}" class="lightbox-media" controls autoplay playsinline onclick="event.stopPropagation()"></video>`;
+  } else {
+    el.innerHTML = `<img src="${item.media_url}" class="lightbox-media" alt="" onclick="event.stopPropagation()">`;
+  }
+  document.getElementById('lightbox-counter').textContent =
+    currentGalleryItems.length > 1 ? `${lbIndex + 1} / ${currentGalleryItems.length}` : '';
+  document.getElementById('lb-prev').style.visibility = lbIndex > 0 ? 'visible' : 'hidden';
+  document.getElementById('lb-next').style.visibility = lbIndex < currentGalleryItems.length - 1 ? 'visible' : 'hidden';
+}
+
+function lightboxNav(dir) {
+  const next = lbIndex + dir;
+  if (next < 0 || next >= currentGalleryItems.length) return;
+  lbIndex = next;
+  renderLightbox();
+}
+
+function closeLightbox() {
+  const old = document.querySelector('#lightbox-content video');
+  if (old) old.pause();
+  document.getElementById('lightbox').hidden = true;
+  document.body.style.overflow = '';
+}
+
+function lbTouchStart(e) { lbTouchX = e.touches[0].clientX; }
+function lbTouchEnd(e) {
+  const diff = lbTouchX - e.changedTouches[0].clientX;
+  if (Math.abs(diff) > 50) lightboxNav(diff > 0 ? 1 : -1);
 }
 
 function triggerMediaUpload(userId) {

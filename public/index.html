@@ -6,6 +6,9 @@
   <meta name="theme-color" content="#080808">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Metamorph">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="manifest" href="/manifest.json">
   <title>Metamorph</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
@@ -345,6 +348,16 @@
 
   <!-- Hidden file input for media uploads -->
   <input type="file" id="media-file-input" accept="image/*,video/*" hidden onchange="handleMediaFileSelected(event)">
+
+  <!-- Media lightbox -->
+  <div id="lightbox" class="lightbox-overlay" hidden
+       ontouchstart="lbTouchStart(event)" ontouchend="lbTouchEnd(event)">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <button class="lightbox-prev" id="lb-prev" onclick="lightboxNav(-1)">‹</button>
+    <div class="lightbox-content" id="lightbox-content" onclick="closeLightbox()"></div>
+    <button class="lightbox-next" id="lb-next" onclick="lightboxNav(1)">›</button>
+    <div class="lightbox-counter" id="lightbox-counter"></div>
+  </div>
 
   <!-- Admin edit user modal -->
   <div id="admin-edit-modal" class="modal-overlay" hidden onclick="closeAdminEditModal(event)">
