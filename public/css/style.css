@@ -1,0 +1,1112 @@
+:root {
+  --black:   #080808;
+  --black2:  #111111;
+  --card:    #181818;
+  --card2:   #202020;
+  --border:  #282828;
+  --border2: #333333;
+  --white:   #FFFFFF;
+  --white2:  #CCCCCC;
+  --muted:   #666666;
+  --dim:     rgba(255,255,255,0.06);
+
+  /* Yellow is reserved exclusively for BJJ belt stripes */
+  --stripe:  #FFD700;
+
+  --win:     #22C55E;
+  --draw:    #888888;
+  --loss:    #EF4444;
+  --danger:  #EF4444;
+
+  --radius:    12px;
+  --radius-sm: 8px;
+  --nav-h:     64px;
+  --header-h:  54px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display: none !important; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  background: var(--black);
+  color: var(--white);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 100vh;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Header ── */
+.app-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--header-h);
+  background: var(--black);
+  border-bottom: 1px solid var(--border);
+  z-index: 200;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 16px;
+  gap: 10px;
+}
+
+.logo {
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  color: var(--white);
+  cursor: pointer;
+  flex: 1;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: var(--white2);
+  cursor: pointer;
+  padding: 8px;
+  margin-left: -8px;
+  display: flex;
+  align-items: center;
+}
+
+.header-right { display: flex; align-items: center; }
+
+.header-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--white);
+  cursor: pointer;
+  overflow: hidden;
+  background: var(--card2);
+}
+
+.header-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ── Main ── */
+.main {
+  padding-top: var(--header-h);
+  padding-bottom: var(--nav-h);
+  min-height: 100vh;
+}
+
+/* ── Views ── */
+.view { display: none; }
+.view.active { display: block; }
+
+.view-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 20px 16px 12px;
+}
+
+/* ── Auth ── */
+.auth-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 20px 24px;
+  min-height: calc(100vh - var(--header-h));
+}
+
+.auth-brand { text-align: center; margin-bottom: 36px; }
+
+.auth-logo {
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: 0.28em;
+  color: var(--white);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.auth-tagline {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+.tab-group {
+  display: flex;
+  gap: 4px;
+  background: var(--black2);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  margin-bottom: 24px;
+}
+
+.tab {
+  flex: 1;
+  padding: 9px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tab.active {
+  background: var(--white);
+  color: var(--black);
+}
+
+.auth-form { display: flex; flex-direction: column; gap: 16px; }
+
+/* ── Forms ── */
+.field { display: flex; flex-direction: column; gap: 6px; }
+
+.field label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--white2);
+}
+
+.field-optional { color: var(--muted); font-weight: 400; text-transform: none; letter-spacing: 0; }
+
+.field input, .field select {
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  color: var(--white);
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+}
+
+.field input::placeholder { color: var(--muted); }
+.field input:focus, .field select:focus { border-color: var(--white2); }
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.field-row.thirds { grid-template-columns: 1fr 1fr 1fr; }
+
+.form-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 13px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+  text-decoration: none;
+  white-space: nowrap;
+  min-height: 48px;
+  letter-spacing: 0.04em;
+}
+
+.btn-primary {
+  background: var(--white);
+  color: var(--black);
+}
+.btn-primary:active { opacity: 0.85; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--white2);
+  border: 1px solid var(--border2);
+}
+.btn-ghost:active { background: var(--dim); }
+
+.btn-danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.btn-full { width: 100%; }
+.btn-sm { padding: 8px 14px; font-size: 12px; min-height: 36px; }
+
+/* ── Bottom nav ── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: var(--nav-h);
+  background: var(--black2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 200;
+}
+
+.nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color 0.12s;
+  min-height: 52px;
+  letter-spacing: 0.04em;
+}
+
+.nav-btn.active { color: var(--white); }
+.nav-btn:active  { color: var(--white2); }
+
+/* ── Roster ── */
+.roster-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 12px 12px 16px;
+}
+
+/* Portrait card — photo fills the entire card */
+.student-card {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--card2);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+  transition: transform 0.16s ease;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.student-card:active { transform: scale(0.95); }
+
+/* Photo layer — fills entire card */
+.card-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 56px;
+  font-weight: 800;
+  overflow: hidden;
+}
+
+.card-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Gradient overlay — deeper fade = less photo visible */
+.card-overlay {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 70px 12px 14px;
+  background: linear-gradient(
+    to top,
+    rgba(0,0,0,0.97) 0%,
+    rgba(0,0,0,0.80) 54%,
+    transparent      100%
+  );
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.card-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--white);
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  margin-bottom: 1px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Discipline badge stack inside overlay */
+.card-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+/* Belt badge inside card */
+.card-overlay .belt-badge {
+  font-size: 10px;
+  padding: 3px 8px;
+  letter-spacing: 0.07em;
+  line-height: 1;   /* prevent body line-height 1.5 from inflating the row */
+}
+
+/* Tilted stripe bars on card badges only */
+.card-overlay .belt-stripes {
+  gap: 5px;
+  overflow: visible;
+}
+
+.card-overlay .belt-stripe {
+  width: 4px;
+  height: 10px;
+  border-radius: 1px;
+  transform: rotate(-22deg);
+}
+
+/* Stripes are always white on the dark card — overrides gold default + white-belt dark rule */
+.card-overlay .belt-badge .belt-stripe {
+  background: rgba(255,255,255,0.85);
+}
+
+/* Muay Thai / Boxing level badges in overlay — fixed height so all 3 rows space evenly */
+.card-overlay .mt-badge {
+  gap: 6px;
+  min-height: 18px;
+  align-items: center;
+}
+
+/* Label column: name + optional signature weapon stacked */
+.card-overlay .mt-label-wrap {
+  min-width: 82px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.card-overlay .mt-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.2;
+}
+
+/* Signature weapon shown below the discipline name */
+.card-overlay .mt-sig {
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.38);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+/* Level stars — yellow filled vs dim outline */
+.card-overlay .lvl-star {
+  font-size: 12px;
+  line-height: 1;
+}
+.card-overlay .lvl-star.on  { color: #FFD700; }
+.card-overlay .lvl-star.off { color: rgba(255,255,255,0.18); }
+
+/* ── Avatars ── */
+.avatar {
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  flex-shrink: 0;
+  border: 1.5px solid var(--border2);
+}
+
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.avatar-sm { width: 52px; height: 52px; font-size: 17px; }
+.avatar-lg { width: 84px; height: 84px; font-size: 26px; }
+.avatar-xl { width: 96px; height: 96px; font-size: 30px; }
+
+/* ── Belt display ── */
+.belt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Belt colours — authentic BJJ palette */
+.belt-badge.white  { background: #E8E8E8; color: #111111; }
+.belt-badge.blue   { background: #1565C0; color: #FFFFFF; }
+.belt-badge.purple { background: #6A1B9A; color: #FFFFFF; }
+.belt-badge.brown  { background: #4E342E; color: #FFFFFF; }
+.belt-badge.black  { background: #1A1A1A; color: #CCCCCC; border: 1px solid #444; }
+
+.belt-stripes { display: flex; gap: 2px; }
+
+/* Yellow lives here — and only here */
+.belt-stripe {
+  width: 5px;
+  height: 13px;
+  border-radius: 2px;
+  background: var(--stripe);
+}
+.belt-badge.white .belt-stripe { background: rgba(0,0,0,0.3); }
+
+/* ── MT Level ── */
+.mt-badge { display: inline-flex; align-items: center; gap: 6px; }
+
+.mt-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.mt-dots { display: flex; gap: 3px; }
+
+.mt-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  background: transparent;
+}
+
+.mt-dot.on { background: var(--white); border-color: var(--white); }
+
+/* ── Profile view ── */
+.profile-wrap { padding: 0 0 24px; }
+
+.profile-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 16px 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-name {
+  font-size: 22px;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.profile-role {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.profile-stats {
+  display: flex;
+  gap: 28px;
+  justify-content: center;
+}
+
+.stat-item { text-align: center; }
+.stat-value { font-size: 17px; font-weight: 800; color: var(--white); }
+.stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+.profile-section {
+  margin: 10px 12px 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.profile-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.progress-label { font-size: 13px; color: var(--white2); font-weight: 500; }
+
+.divider { height: 1px; background: var(--border); margin: 12px 0; }
+
+.comp-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  text-align: center;
+}
+
+.comp-value { font-size: 26px; font-weight: 800; line-height: 1; }
+.comp-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; }
+.comp-win  .comp-value { color: var(--win); }
+.comp-draw .comp-value { color: var(--draw); }
+.comp-loss .comp-value { color: var(--loss); }
+
+.profile-actions {
+  padding: 14px 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Edit form ── */
+.edit-form {
+  padding: 0 12px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.avatar-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 0 8px;
+}
+
+/* ── Coach modal ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 300;
+  display: flex;
+  align-items: flex-end;
+}
+
+.modal-sheet {
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--card);
+  border-top: 1px solid var(--border2);
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 14px 20px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--border2);
+  border-radius: 4px;
+  margin: 0 auto 2px;
+}
+
+.modal-title {
+  font-size: 17px;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
+.modal-subtitle {
+  font-size: 13px;
+  color: var(--white2);
+  text-align: center;
+  margin-top: -10px;
+  font-weight: 500;
+}
+
+.modal-section { display: flex; flex-direction: column; gap: 8px; }
+
+.belt-selector, .stripe-selector, .level-selector {
+  display: flex;
+  gap: 6px;
+}
+
+.belt-opt, .stripe-opt, .level-opt {
+  flex: 1;
+  padding: 10px 6px;
+  background: var(--card2);
+  border: 1.5px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--white2);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.12s;
+}
+
+.belt-opt.selected, .stripe-opt.selected, .level-opt.selected {
+  border-color: var(--white);
+  color: var(--white);
+  background: var(--dim);
+}
+
+/* Belt-specific selected states */
+.belt-opt[data-belt="white"].selected  { background: #E8E8E8; border-color: #E8E8E8; color: #111; }
+.belt-opt[data-belt="blue"].selected   { background: #1565C0; border-color: #1565C0; color: #fff; }
+.belt-opt[data-belt="purple"].selected { background: #6A1B9A; border-color: #6A1B9A; color: #fff; }
+.belt-opt[data-belt="brown"].selected  { background: #4E342E; border-color: #4E342E; color: #fff; }
+.belt-opt[data-belt="black"].selected  { background: #1A1A1A; border-color: var(--white); color: var(--white2); }
+
+/* ── Pending (student waiting) ── */
+.pending-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: calc(100vh - var(--header-h));
+  padding: 40px 32px;
+  gap: 18px;
+}
+
+.pending-ring {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+
+.pending-title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.pending-desc {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+/* ── Pending cards (admin panel) ── */
+.pending-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin: 0 12px 10px;
+}
+
+.pending-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pending-card-name {
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pending-card-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.pending-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* ── Nav badge (pending count) ── */
+.nav-icon-wrap { position: relative; display: inline-flex; }
+
+.nav-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  background: var(--white);
+  color: var(--black);
+  border-radius: 10px;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 5px;
+  min-width: 16px;
+  text-align: center;
+  line-height: 14px;
+}
+
+/* ── Toast ── */
+#toast-container {
+  position: fixed;
+  bottom: calc(var(--nav-h) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 400;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;
+  width: calc(100% - 32px);
+  max-width: 340px;
+}
+
+.toast {
+  padding: 11px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  animation: toast-anim 3s ease forwards;
+  width: 100%;
+}
+
+.toast-success { background: #1A1A1A; border: 1px solid var(--border2); color: var(--white2); }
+.toast-error   { background: #1A1A1A; border: 1px solid var(--danger);   color: var(--danger); }
+
+@keyframes toast-anim {
+  0%   { opacity: 0; transform: translateY(6px); }
+  12%  { opacity: 1; transform: translateY(0);   }
+  75%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ── Utility ── */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--muted);
+  font-size: 13px;
+  gap: 8px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--white2);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.empty-state {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ── Discipline toggles (edit form) ── */
+.discipline-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.discipline-row + .discipline-row {
+  border-top: 1px solid var(--border);
+}
+
+.discipline-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--white);
+}
+
+.discipline-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* iOS-style toggle */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: var(--border2);
+  border-radius: 26px;
+  transition: background 0.2s;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  left: 3px;
+  top: 3px;
+  background: var(--white2);
+  border-radius: 50%;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: var(--white);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+  background: var(--black);
+}
+
+/* ── Watch Out For section ── */
+.watchout-section {
+  border-color: rgba(255,255,255,0.12);
+}
+
+.watchout-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.watchout-row:last-child { border-bottom: none; }
+
+.watchout-disc {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  min-width: 88px;
+  flex-shrink: 0;
+}
+
+.watchout-weapon {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: 0.02em;
+}
+
+/* ── Card: Watch Out For block ── */
+.card-watchout {
+  width: 100%;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 6px;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.card-watchout-label {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+}
+
+.card-watchout-weapons {
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.88);
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.card-watchout-placeholder {
+  font-weight: 500;
+  font-style: italic;
+  color: rgba(255,255,255,0.32);
+}
+
+/* ── Card stats line (height · weight) ── */
+.card-stats {
+  font-size: 10px;
+  color: rgba(255,255,255,0.4);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  margin-top: -2px;
+  margin-bottom: 3px;
+}
+
+/* ── Weapons: modal chip grid ── */
+.weapon-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.weapon-chip {
+  padding: 7px 13px;
+  background: var(--card2);
+  border: 1.5px solid var(--border2);
+  border-radius: 20px;
+  color: var(--white2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.weapon-chip.selected {
+  background: rgba(255,255,255,0.08);
+  border-color: var(--white);
+  color: var(--white);
+}
+
+.weapon-chip.dim {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+
+/* Counter badge next to section label */
+.weapon-count {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+  margin-left: 6px;
+}
+
+/* ── Weapons: profile display ── */
+.weapons-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.weapons-group:last-child { margin-bottom: 0; }
+
+.weapons-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.weapons-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.weapon-tag {
+  display: inline-block;
+  padding: 4px 11px;
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  color: var(--white2);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* ── Responsive ── */
+@media (min-width: 540px) {
+  .roster-grid { grid-template-columns: repeat(3, 1fr); padding: 12px 16px 16px; }
+}
+
+@media (min-width: 900px) {
+  .roster-grid { grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px; }
+  .modal-sheet { max-width: 460px; margin: auto; border-radius: var(--radius); }
+  .modal-overlay { align-items: center; }
+}

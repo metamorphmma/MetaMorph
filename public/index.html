@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#080808">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Metamorph</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="app-header" id="app-header" hidden>
+    <div class="header-inner">
+      <button class="back-btn" id="back-btn" onclick="goBack()" hidden>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,18 9,12 15,6"/></svg>
+      </button>
+      <div class="logo" onclick="showRoster()">Metamorph</div>
+      <div class="header-right">
+        <div class="header-avatar" id="header-avatar" onclick="showMyProfile()"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- AUTH VIEW -->
+    <div id="auth-view" class="view active">
+      <div class="auth-wrap">
+        <div class="auth-brand">
+          <div class="auth-logo">Metamorph</div>
+          <p class="auth-tagline">Track Your Progress. Earn Your Rank.</p>
+        </div>
+
+        <div class="auth-card">
+          <div class="tab-group">
+            <button class="tab active" id="tab-login" onclick="switchTab('login')">Login</button>
+            <button class="tab" id="tab-register" onclick="switchTab('register')">Register</button>
+          </div>
+
+          <!-- Login -->
+          <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
+            <div class="field">
+              <label>Name</label>
+              <input type="text" id="login-name" placeholder="Your name" autocomplete="username" required>
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <input type="password" id="login-password" placeholder="••••" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Login</button>
+          </form>
+
+          <!-- Register -->
+          <form id="register-form" class="auth-form" hidden onsubmit="handleRegister(event)">
+            <div class="field">
+              <label>Name</label>
+              <input type="text" id="reg-name" placeholder="John Smith" autocomplete="name" required>
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <input type="password" id="reg-password" placeholder="Min 4 characters" autocomplete="new-password" minlength="4" required>
+            </div>
+            <div class="field">
+              <label>Admin Code <span class="field-optional">(admin only)</span></label>
+              <input type="text" id="reg-admin-code" placeholder="Leave blank to register as student">
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Submit Registration</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROSTER VIEW -->
+    <div id="roster-view" class="view">
+      <div class="view-title">Athletes</div>
+      <div id="roster-grid" class="roster-grid"></div>
+    </div>
+
+    <!-- PROFILE VIEW -->
+    <div id="profile-view" class="view">
+      <div id="profile-content"></div>
+    </div>
+
+    <!-- PENDING VIEW (student awaiting approval) -->
+    <div id="pending-view" class="view">
+      <div class="pending-wrap">
+        <div class="pending-ring">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+        </div>
+        <h2 class="pending-title">Awaiting Approval</h2>
+        <p class="pending-desc">Your registration has been submitted.<br>The admin will review and approve your account.</p>
+        <button class="btn btn-ghost" onclick="handleLogout()">Back to Login</button>
+      </div>
+    </div>
+
+    <!-- ADMIN VIEW (pending approvals panel) -->
+    <div id="admin-view" class="view">
+      <div class="view-title">Pending Approvals</div>
+      <div id="pending-list"></div>
+    </div>
+
+    <!-- EDIT VIEW -->
+    <div id="edit-view" class="view">
+      <div class="view-title">Edit Profile</div>
+      <form id="edit-form" class="edit-form" onsubmit="handleSaveProfile(event)">
+
+        <div class="avatar-upload">
+          <div class="avatar-xl" id="edit-avatar-display"></div>
+          <label class="btn btn-ghost btn-sm" for="avatar-file-input">Change Photo</label>
+          <input type="file" id="avatar-file-input" accept="image/*" hidden onchange="previewAvatar(event)">
+        </div>
+
+        <div class="form-section">
+          <div class="field">
+            <label>Name</label>
+            <input type="text" id="edit-name" required>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Height (cm)</label>
+              <input type="number" id="edit-height" placeholder="175" min="100" max="250">
+            </div>
+            <div class="field">
+              <label>Weight (kg)</label>
+              <input type="number" id="edit-weight" placeholder="75.0" min="30" max="250" step="0.1">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="section-label">My Disciplines</div>
+          <div class="discipline-row">
+            <div>
+              <div class="discipline-label">Brazilian Jiu-Jitsu</div>
+              <div class="discipline-sub">Belt &amp; competition tracking</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-bjj" checked onchange="toggleDisciplineSection('bjj', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="discipline-row">
+            <div>
+              <div class="discipline-label">Muay Thai</div>
+              <div class="discipline-sub">Level &amp; competition tracking</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-mt" checked onchange="toggleDisciplineSection('mt', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="discipline-row">
+            <div>
+              <div class="discipline-label">Boxing</div>
+              <div class="discipline-sub">Level &amp; competition tracking</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-boxing" checked onchange="toggleDisciplineSection('boxing', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-section" id="bjj-comp-section">
+          <div class="section-label">BJJ — Competition Record</div>
+          <div class="field-row thirds">
+            <div class="field">
+              <label>Wins</label>
+              <input type="number" id="bjj-wins" value="0" min="0">
+            </div>
+            <div class="field">
+              <label>Draws</label>
+              <input type="number" id="bjj-draws" value="0" min="0">
+            </div>
+            <div class="field">
+              <label>Losses</label>
+              <input type="number" id="bjj-losses" value="0" min="0">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section" id="mt-comp-section">
+          <div class="section-label">Muay Thai — Competition Record</div>
+          <div class="field-row thirds">
+            <div class="field">
+              <label>Wins</label>
+              <input type="number" id="mt-wins" value="0" min="0">
+            </div>
+            <div class="field">
+              <label>Draws</label>
+              <input type="number" id="mt-draws" value="0" min="0">
+            </div>
+            <div class="field">
+              <label>Losses</label>
+              <input type="number" id="mt-losses" value="0" min="0">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section" id="boxing-comp-section">
+          <div class="section-label">Boxing — Competition Record</div>
+          <div class="field-row thirds">
+            <div class="field">
+              <label>Wins</label>
+              <input type="number" id="boxing-wins" value="0" min="0">
+            </div>
+            <div class="field">
+              <label>Draws</label>
+              <input type="number" id="boxing-draws" value="0" min="0">
+            </div>
+            <div class="field">
+              <label>Losses</label>
+              <input type="number" id="boxing-losses" value="0" min="0">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="section-label">Change Password</div>
+          <div class="field">
+            <label>New Password <span class="field-optional">(leave blank to keep current)</span></label>
+            <input type="password" id="edit-new-password" placeholder="Min 4 characters, letters &amp; numbers" minlength="4" autocomplete="new-password">
+          </div>
+          <div class="field">
+            <label>Confirm Password</label>
+            <input type="password" id="edit-confirm-password" placeholder="Repeat new password" minlength="4" autocomplete="new-password">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full">Save Changes</button>
+      </form>
+    </div>
+
+  </main>
+
+  <!-- Bottom nav -->
+  <nav class="bottom-nav" id="bottom-nav" hidden>
+    <button class="nav-btn" id="nav-home" onclick="showRoster()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      <span>Athletes</span>
+    </button>
+
+    <!-- Student only -->
+    <button class="nav-btn" id="nav-profile" onclick="showMyProfile()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>My Profile</span>
+    </button>
+
+    <!-- Admin only -->
+    <button class="nav-btn" id="nav-pending" hidden onclick="showPendingApprovals()">
+      <div class="nav-icon-wrap">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        <span class="nav-badge" id="pending-badge" hidden>0</span>
+      </div>
+      <span>Pending</span>
+    </button>
+
+    <button class="nav-btn" id="nav-logout" onclick="handleLogout()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      <span>Logout</span>
+    </button>
+  </nav>
+
+  <!-- Coach assign modal -->
+  <div id="coach-modal" class="modal-overlay" hidden onclick="closeCoachModal(event)">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Assign Progress</div>
+      <div id="modal-athlete-name" class="modal-subtitle"></div>
+
+      <div class="modal-section">
+        <div class="section-label">🥋 BJJ Belt</div>
+        <div class="belt-selector">
+          <button class="belt-opt" data-belt="white"  onclick="selectBelt('white')">White</button>
+          <button class="belt-opt" data-belt="blue"   onclick="selectBelt('blue')">Blue</button>
+          <button class="belt-opt" data-belt="purple" onclick="selectBelt('purple')">Purple</button>
+          <button class="belt-opt" data-belt="brown"  onclick="selectBelt('brown')">Brown</button>
+          <button class="belt-opt" data-belt="black"  onclick="selectBelt('black')">Black</button>
+        </div>
+        <div class="section-label" style="margin-top:10px">Stripes</div>
+        <div class="stripe-selector">
+          <button class="stripe-opt" data-stripes="0" onclick="selectStripes(0)">0</button>
+          <button class="stripe-opt" data-stripes="1" onclick="selectStripes(1)">1</button>
+          <button class="stripe-opt" data-stripes="2" onclick="selectStripes(2)">2</button>
+          <button class="stripe-opt" data-stripes="3" onclick="selectStripes(3)">3</button>
+          <button class="stripe-opt" data-stripes="4" onclick="selectStripes(4)">4</button>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="section-label">🥊 Muay Thai Level</div>
+        <div class="level-selector" id="mt-level-selector">
+          <button class="level-opt" data-level="1" onclick="selectLevel(1)">1</button>
+          <button class="level-opt" data-level="2" onclick="selectLevel(2)">2</button>
+          <button class="level-opt" data-level="3" onclick="selectLevel(3)">3</button>
+          <button class="level-opt" data-level="4" onclick="selectLevel(4)">4</button>
+          <button class="level-opt" data-level="5" onclick="selectLevel(5)">5</button>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="section-label">🥊 Boxing Level</div>
+        <div class="level-selector" id="boxing-level-selector">
+          <button class="level-opt" data-level="1" onclick="selectBoxingLevel(1)">1</button>
+          <button class="level-opt" data-level="2" onclick="selectBoxingLevel(2)">2</button>
+          <button class="level-opt" data-level="3" onclick="selectBoxingLevel(3)">3</button>
+          <button class="level-opt" data-level="4" onclick="selectBoxingLevel(4)">4</button>
+          <button class="level-opt" data-level="5" onclick="selectBoxingLevel(5)">5</button>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-full" onclick="saveCoachAssignment()">Save Assignment</button>
+    </div>
+  </div>
+
+  <!-- Weapons assign modal -->
+  <div id="weapons-modal" class="modal-overlay" hidden onclick="closeWeaponsModal(event)">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Assign Weapons</div>
+      <div id="weapons-modal-name" class="modal-subtitle"></div>
+
+      <div class="modal-section">
+        <div class="section-label">🥊 Muay Thai <span class="weapon-count" id="mt-wcount">0 / 3</span></div>
+        <div class="weapon-grid" id="mt-weapon-grid"></div>
+      </div>
+
+      <div class="modal-section">
+        <div class="section-label">🥊 Boxing <span class="weapon-count" id="boxing-wcount">0 / 3</span></div>
+        <div class="weapon-grid" id="boxing-weapon-grid"></div>
+      </div>
+
+      <div class="modal-section">
+        <div class="section-label">🥋 Jiu-Jitsu <span class="weapon-count" id="bjj-wcount">0 / 3</span></div>
+        <div class="weapon-grid" id="bjj-weapon-grid"></div>
+      </div>
+
+      <button class="btn btn-primary btn-full" onclick="saveWeaponAssignment()">Assign Weapons</button>
+    </div>
+  </div>
+
+  <!-- Admin edit user modal -->
+  <div id="admin-edit-modal" class="modal-overlay" hidden onclick="closeAdminEditModal(event)">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Edit User</div>
+      <div id="admin-edit-modal-name" class="modal-subtitle"></div>
+
+      <div class="modal-section" style="gap:14px">
+        <div class="field">
+          <label>New Name <span class="field-optional">(leave blank to keep)</span></label>
+          <input type="text" id="admin-edit-name" placeholder="Current name" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>New Password <span class="field-optional">(leave blank to keep)</span></label>
+          <input type="password" id="admin-edit-password" placeholder="Min 4 characters" minlength="4" autocomplete="new-password">
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-full" onclick="saveAdminEdit()">Save Changes</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast-container"></div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

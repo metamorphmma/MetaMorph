@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem \"C:\\\\Program Files\\\\nodejs\" -ErrorAction SilentlyContinue | Select-Object Name; Test-Path \"C:\\\\Program Files\\\\nodejs\\\\npm.cmd\"; Get-ChildItem \"$env:APPDATA\\\\npm\" -ErrorAction SilentlyContinue | Select-Object -First 5)",
+      "PowerShell($paths = [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"User\"\\) -split \";\"; $paths | Where-Object {$_ -ne \"\"}; Write-Host \"---\"; where.exe node 2>$null; where.exe npm 2>$null)",
+      "PowerShell(python --version 2>&1)",
+      "PowerShell(pip --version 2>&1)",
+      "PowerShell(Start-Sleep -Seconds 2; try { $r = Invoke-WebRequest -Uri \"http://localhost:3000/api/users\" -UseBasicParsing; Write-Host \"Status: $\\($r.StatusCode\\)\"; Write-Host $r.Content } catch { Write-Host \"Error: $_\" })",
+      "Bash(mkdir -p \"C:\\\\Users\\\\esabe\\\\OneDrive\\\\Desktop\\\\FightCo\\\\Initiatives\\\\Engagement app\\\\.claude\")",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(python -c \"import server; print\\('server.py loads OK'\\)\")",
+      "Bash(python -c \"import server; print\\('OK'\\)\")"
+    ]
+  }
+}
