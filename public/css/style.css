@@ -461,8 +461,9 @@ body {
 
 /* Level stars — yellow filled vs dim outline */
 .card-overlay .lvl-star {
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1;
+  letter-spacing: -1px;
 }
 .card-overlay .lvl-star.on  { color: #FFD700; }
 .card-overlay .lvl-star.off { color: rgba(255,255,255,0.18); }

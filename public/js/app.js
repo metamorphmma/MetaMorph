@@ -366,7 +366,7 @@ function renderProfile(user) {
       ${weaponsSection}
       <div class="profile-actions">
         ${isOwn            ? '<button class="btn btn-ghost btn-full" onclick="showEditProfile()">Edit My Profile</button>' : ''}
-        ${canAssignWeapons ? `<button class="btn btn-ghost btn-full" onclick="openWeaponsModal(${user.id},'${esc(user.name)}')">⚔ Assign Weapons</button>` : ''}
+        ${canAssignWeapons ? `<button class="btn btn-ghost btn-full" onclick="openWeaponsModal(${user.id},'${esc(user.name)}',${user.mt_active?1:0},${user.boxing_active?1:0},${user.bjj_active?1:0})">⚔ Assign Weapons</button>` : ''}
         ${canAssign        ? `<button class="btn btn-primary btn-full" onclick="openAssignModal(${user.id},'${esc(user.name)}')">Assign Progress</button>` : ''}
         ${isAdmin          ? `<button class="btn btn-ghost btn-full" onclick="openAdminEditModal(${user.id},'${esc(user.name)}')">Edit Name / Password</button>` : ''}
       </div>
@@ -646,23 +646,27 @@ async function saveCoachAssignment() {
 }
 
 /* ── Weapons modal ── */
-async function openWeaponsModal(userId, name) {
+async function openWeaponsModal(userId, name, mtActive, boxingActive, bjjActive) {
   weaponsTargetId = userId;
   selectedWeapons = { bjj: [], mt: [], boxing: [] };
   document.getElementById('weapons-modal-name').textContent = name;
-  // Render grids immediately (all unselected) — MT → Boxing → BJJ
-  renderWeaponGrid('mt');
-  renderWeaponGrid('boxing');
-  renderWeaponGrid('bjj');
+  // Show/hide sections based on which disciplines are active for this student
+  document.getElementById('mt-weapon-section').hidden     = !mtActive;
+  document.getElementById('boxing-weapon-section').hidden = !boxingActive;
+  document.getElementById('bjj-weapon-section').hidden    = !bjjActive;
+  // Render grids for active disciplines only — MT → Boxing → BJJ
+  if (mtActive)     renderWeaponGrid('mt');
+  if (boxingActive) renderWeaponGrid('boxing');
+  if (bjjActive)    renderWeaponGrid('bjj');
   document.getElementById('weapons-modal').hidden = false;
   document.body.style.overflow = 'hidden';
   // Pre-load whatever this user previously assigned
   try {
     const mine = await api('GET', `/api/users/${userId}/weapons/mine`);
     selectedWeapons = mine;
-    renderWeaponGrid('mt');
-    renderWeaponGrid('boxing');
-    renderWeaponGrid('bjj');
+    if (mtActive)     renderWeaponGrid('mt');
+    if (boxingActive) renderWeaponGrid('boxing');
+    if (bjjActive)    renderWeaponGrid('bjj');
   } catch { /* first time — nothing pre-selected */ }
 }
 
