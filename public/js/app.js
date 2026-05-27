@@ -771,7 +771,7 @@ async function loadMediaGallery(userId) {
       return;
     }
     el.innerHTML = items.map((item, idx) => {
-      const canDelete = me && (me.id === item.uploader_id || me.role === 'admin');
+      const canDelete = me && (me.id === item.uploader_id || me.id === userId || me.role === 'admin');
       const del = canDelete ? `<button class="media-delete" onclick="event.stopPropagation();deleteMedia(${item.id},${userId})" title="Delete">✕</button>` : '';
       const thumb = item.media_type === 'video'
         ? `<video src="${item.media_url}" class="media-thumb" playsinline muted preload="metadata"></video><div class="media-play-icon">▶</div>`
@@ -793,9 +793,18 @@ let lbTouchX   = 0;
 
 function openLightbox(index) {
   lbIndex = index;
-  renderLightbox();
   document.getElementById('lightbox').hidden = false;
   document.body.style.overflow = 'hidden';
+  renderLightbox();
+  // Fade in
+  const el = document.getElementById('lightbox-content');
+  el.style.transition = 'none';
+  el.style.opacity    = '0';
+  el.style.transform  = 'scale(0.95)';
+  el.offsetHeight;
+  el.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+  el.style.opacity    = '1';
+  el.style.transform  = 'scale(1)';
 }
 
 function renderLightbox() {
@@ -818,8 +827,23 @@ function renderLightbox() {
 function lightboxNav(dir) {
   const next = lbIndex + dir;
   if (next < 0 || next >= currentGalleryItems.length) return;
-  lbIndex = next;
-  renderLightbox();
+  const el = document.getElementById('lightbox-content');
+  // Slide out current
+  el.style.transition = 'opacity 0.18s ease, transform 0.18s ease';
+  el.style.opacity    = '0';
+  el.style.transform  = `translateX(${dir > 0 ? '-40px' : '40px'})`;
+  setTimeout(() => {
+    lbIndex = next;
+    renderLightbox();
+    // Start from opposite side, then slide in
+    el.style.transition = 'none';
+    el.style.opacity    = '0';
+    el.style.transform  = `translateX(${dir > 0 ? '40px' : '-40px'})`;
+    el.offsetHeight; // force reflow
+    el.style.transition = 'opacity 0.18s ease, transform 0.18s ease';
+    el.style.opacity    = '1';
+    el.style.transform  = 'translateX(0)';
+  }, 180);
 }
 
 function closeLightbox() {

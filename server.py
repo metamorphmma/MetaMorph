@@ -467,7 +467,10 @@ def delete_media(mid):
     if not row:
         return jsonify({'error': 'Not found'}), 404
     u = db.execute('SELECT role FROM users WHERE id=?', (session['user_id'],)).fetchone()
-    if row['uploader_id'] != session['user_id'] and (not u or u['role'] != 'admin'):
+    is_uploader = row['uploader_id'] == session['user_id']
+    is_subject  = row['subject_id']  == session['user_id']
+    is_admin    = u and u['role'] == 'admin'
+    if not (is_uploader or is_subject or is_admin):
         return jsonify({'error': 'Not allowed'}), 403
     try:
         cloudinary.uploader.destroy(row['public_id'], resource_type=row['media_type'])
