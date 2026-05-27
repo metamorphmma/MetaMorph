@@ -410,12 +410,12 @@ body {
 
 /* Tilted stripe bars on card badges only */
 .card-overlay .belt-stripes {
-  gap: 5px;
+  gap: 3px;
   overflow: visible;
 }
 
 .card-overlay .belt-stripe {
-  width: 4px;
+  width: 3px;
   height: 10px;
   border-radius: 1px;
   transform: rotate(-22deg);
