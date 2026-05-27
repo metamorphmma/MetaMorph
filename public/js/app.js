@@ -799,24 +799,29 @@ async function handleMediaFileSelected(event) {
   const file = event.target.files[0];
   if (!file || !mediaUploadTargetId) return;
   const isVideo = file.type.startsWith('video/');
-  const maxMB = isVideo ? 40 : 10;
+  const maxMB   = isVideo ? 40 : 10;
   if (file.size > maxMB * 1024 * 1024) {
     toast(`File too large — max ${maxMB} MB`, 'error'); return;
   }
   const btn = document.querySelector(`[onclick="triggerMediaUpload(${mediaUploadTargetId})"]`);
   if (btn) btn.textContent = 'Uploading…';
   try {
-    const formData = new FormData();
-    formData.append('file', file);
-    const resp = await fetch(`/api/users/${mediaUploadTargetId}/media`, {
+    // Upload directly from browser to Cloudinary (bypasses PythonAnywhere network limits)
+    const cloudForm = new FormData();
+    cloudForm.append('file', file);
+    cloudForm.append('upload_preset', 'media_upload_cloudinary');
+    const cloudResp = await fetch('https://api.cloudinary.com/v1_1/dqdmjdrd8/auto/upload', {
       method: 'POST',
-      body: formData,
-      credentials: 'same-origin'
+      body: cloudForm
     });
-    if (!resp.ok) {
-      const err = await resp.json();
-      throw new Error(err.error || 'Upload failed');
-    }
+    if (!cloudResp.ok) throw new Error('Cloudinary upload failed');
+    const cloudData = await cloudResp.json();
+    // Save the resulting URL to our server
+    await api('POST', `/api/users/${mediaUploadTargetId}/media/save`, {
+      url:        cloudData.secure_url,
+      public_id:  cloudData.public_id,
+      media_type: isVideo ? 'video' : 'image'
+    });
     toast('Media uploaded!');
     loadMediaGallery(mediaUploadTargetId);
   } catch (err) {

@@ -411,6 +411,26 @@ def get_media(uid):
     ).fetchall()
     return jsonify([dict(r) for r in rows])
 
+@app.route('/api/users/<int:uid>/media/save', methods=['POST'])
+@require_auth
+def save_media(uid):
+    """Store a media URL after the browser has uploaded directly to Cloudinary."""
+    d          = request.get_json() or {}
+    url        = (d.get('url')       or '').strip()
+    public_id  = (d.get('public_id') or '').strip()
+    media_type = d.get('media_type', 'image')
+    if not url or not public_id:
+        return jsonify({'error': 'Missing url or public_id'}), 400
+    if media_type not in ('image', 'video'):
+        media_type = 'image'
+    db = get_db()
+    db.execute(
+        'INSERT INTO student_media (uploader_id, subject_id, media_url, media_type, public_id) VALUES (?,?,?,?,?)',
+        (session['user_id'], uid, url, media_type, public_id)
+    )
+    db.commit()
+    return jsonify({'ok': True})
+
 @app.route('/api/users/<int:uid>/media', methods=['POST'])
 @require_auth
 def upload_media(uid):
