@@ -5,11 +5,19 @@ from datetime import timedelta
 from functools import wraps
 from flask import Flask, request, jsonify, session, send_from_directory, g
 import bcrypt
+import cloudinary
+import cloudinary.uploader
 
 app = Flask(__name__, static_folder='public', static_url_path='')
 app.secret_key = os.environ.get('SESSION_SECRET', secrets.token_hex(32))
 app.permanent_session_lifetime = timedelta(days=7)
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB max request
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50 MB — supports short video uploads
+
+cloudinary.config(
+    cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
+    api_key    = os.environ.get('CLOUDINARY_API_KEY', ''),
+    api_secret = os.environ.get('CLOUDINARY_API_SECRET', '')
+)
 
 DB_PATH = os.environ.get('DB_PATH', 'metamorph.db')
 
@@ -99,6 +107,17 @@ def init_db():
                 UNIQUE(from_user, to_user, discipline, weapon),
                 FOREIGN KEY (from_user) REFERENCES users(id),
                 FOREIGN KEY (to_user)   REFERENCES users(id)
+            );
+            CREATE TABLE IF NOT EXISTS student_media (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                uploader_id INTEGER NOT NULL,
+                subject_id  INTEGER NOT NULL,
+                media_url   TEXT NOT NULL,
+                media_type  TEXT NOT NULL,
+                public_id   TEXT NOT NULL,
+                uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (uploader_id) REFERENCES users(id),
+                FOREIGN KEY (subject_id)  REFERENCES users(id)
             );
         ''')
 
@@ -359,13 +378,84 @@ def upload_avatar(uid):
         return jsonify({'error': "Cannot edit another user's profile"}), 403
     d = request.get_json() or {}
     img_data = d.get('data', '')
-    # Must be a base64 data URL
     if not img_data.startswith('data:image/'):
         return jsonify({'error': 'Invalid image data'}), 400
+    try:
+        result = cloudinary.uploader.upload(
+            img_data,
+            folder       = 'metamorph/avatars',
+            public_id    = f'user_{uid}',
+            overwrite    = True,
+            transformation = [{'width': 400, 'height': 400, 'crop': 'fill', 'gravity': 'face'}]
+        )
+        url = result['secure_url']
+    except Exception as e:
+        return jsonify({'error': f'Upload failed: {str(e)}'}), 500
     db = get_db()
-    db.execute('UPDATE users SET profile_pic=? WHERE id=?', (img_data, uid))
+    db.execute('UPDATE users SET profile_pic=? WHERE id=?', (url, uid))
     db.commit()
-    return jsonify({'profile_pic': img_data})
+    return jsonify({'profile_pic': url})
+
+# ── Student media (action photos / videos) ───────────────────────────────────
+
+@app.route('/api/users/<int:uid>/media', methods=['GET'])
+def get_media(uid):
+    rows = get_db().execute(
+        '''SELECT m.id, m.media_url, m.media_type, m.public_id,
+                  m.uploaded_at, u.name AS uploader_name
+           FROM student_media m
+           JOIN users u ON u.id = m.uploader_id
+           WHERE m.subject_id = ?
+           ORDER BY m.uploaded_at DESC''',
+        (uid,)
+    ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/users/<int:uid>/media', methods=['POST'])
+@require_auth
+def upload_media(uid):
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    file = request.files['file']
+    mime = file.content_type or ''
+    if mime.startswith('video/'):
+        resource_type = 'video'
+    elif mime.startswith('image/'):
+        resource_type = 'image'
+    else:
+        return jsonify({'error': 'Only images and videos are allowed'}), 400
+    try:
+        opts = {'folder': 'metamorph/media', 'resource_type': resource_type}
+        if resource_type == 'video':
+            opts['eager'] = [{'duration': 10}]   # trim to 10 s max
+        result = cloudinary.uploader.upload(file, **opts)
+    except Exception as e:
+        return jsonify({'error': f'Upload failed: {str(e)}'}), 500
+    db = get_db()
+    db.execute(
+        'INSERT INTO student_media (uploader_id, subject_id, media_url, media_type, public_id) VALUES (?,?,?,?,?)',
+        (session['user_id'], uid, result['secure_url'], resource_type, result['public_id'])
+    )
+    db.commit()
+    return jsonify({'url': result['secure_url'], 'type': resource_type})
+
+@app.route('/api/media/<int:mid>', methods=['DELETE'])
+@require_auth
+def delete_media(mid):
+    db  = get_db()
+    row = db.execute('SELECT * FROM student_media WHERE id=?', (mid,)).fetchone()
+    if not row:
+        return jsonify({'error': 'Not found'}), 404
+    u = db.execute('SELECT role FROM users WHERE id=?', (session['user_id'],)).fetchone()
+    if row['uploader_id'] != session['user_id'] and (not u or u['role'] != 'admin'):
+        return jsonify({'error': 'Not allowed'}), 403
+    try:
+        cloudinary.uploader.destroy(row['public_id'], resource_type=row['media_type'])
+    except Exception:
+        pass
+    db.execute('DELETE FROM student_media WHERE id=?', (mid,))
+    db.commit()
+    return jsonify({'ok': True})
 
 @app.route('/api/users/<int:uid>/competition', methods=['PUT'])
 @require_auth

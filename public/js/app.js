@@ -364,6 +364,15 @@ function renderProfile(user) {
       ${mtSection}
       ${boxingSection}
       ${weaponsSection}
+      <div class="profile-section" id="media-section">
+        <div class="profile-section-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>📸 In Action</span>
+          ${!isOwn && me ? `<button class="btn-upload-media" onclick="triggerMediaUpload(${user.id})">+ Add</button>` : ''}
+        </div>
+        <div class="media-gallery" id="media-gallery-${user.id}">
+          <div class="loading"><div class="spinner"></div></div>
+        </div>
+      </div>
       <div class="profile-actions">
         ${isOwn            ? '<button class="btn btn-ghost btn-full" onclick="showEditProfile()">Edit My Profile</button>' : ''}
         ${canAssignWeapons ? `<button class="btn btn-ghost btn-full" onclick="openWeaponsModal(${user.id},'${esc(user.name)}',${user.mt_active?1:0},${user.boxing_active?1:0},${user.bjj_active?1:0})">⚔ Assign Weapons</button>` : ''}
@@ -371,6 +380,7 @@ function renderProfile(user) {
         ${isAdmin          ? `<button class="btn btn-ghost btn-full" onclick="openAdminEditModal(${user.id},'${esc(user.name)}')">Edit Name / Password</button>` : ''}
       </div>
     </div>`;
+  loadMediaGallery(user.id);
 }
 
 function showMyProfile() {
@@ -742,6 +752,86 @@ async function saveAdminEdit() {
     document.body.style.overflow = '';
     toast('User updated!');
     showProfile(adminEditTargetId);
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+/* ── Media gallery ── */
+let mediaUploadTargetId = null;
+
+async function loadMediaGallery(userId) {
+  const el = document.getElementById(`media-gallery-${userId}`);
+  if (!el) return;
+  try {
+    const items = await api('GET', `/api/users/${userId}/media`);
+    if (!items.length) {
+      el.innerHTML = '<div class="media-empty">No photos or videos yet.</div>';
+      return;
+    }
+    el.innerHTML = items.map(item => {
+      const canDelete = me && (me.id === item.uploader_id || me.role === 'admin');
+      const del = canDelete ? `<button class="media-delete" onclick="deleteMedia(${item.id},${userId})" title="Delete">✕</button>` : '';
+      if (item.media_type === 'video') {
+        return `<div class="media-item">
+          <video src="${item.media_url}" controls playsinline class="media-thumb"></video>
+          <div class="media-uploader">by ${esc(item.uploader_name)}</div>
+          ${del}
+        </div>`;
+      }
+      return `<div class="media-item">
+        <img src="${item.media_url}" class="media-thumb" loading="lazy" alt="">
+        <div class="media-uploader">by ${esc(item.uploader_name)}</div>
+        ${del}
+      </div>`;
+    }).join('');
+  } catch {
+    el.innerHTML = '<div class="media-empty">Could not load media.</div>';
+  }
+}
+
+function triggerMediaUpload(userId) {
+  mediaUploadTargetId = userId;
+  const input = document.getElementById('media-file-input');
+  input.value = '';
+  input.click();
+}
+
+async function handleMediaFileSelected(event) {
+  const file = event.target.files[0];
+  if (!file || !mediaUploadTargetId) return;
+  const isVideo = file.type.startsWith('video/');
+  const maxMB = isVideo ? 40 : 10;
+  if (file.size > maxMB * 1024 * 1024) {
+    toast(`File too large — max ${maxMB} MB`, 'error'); return;
+  }
+  const btn = document.querySelector(`[onclick="triggerMediaUpload(${mediaUploadTargetId})"]`);
+  if (btn) btn.textContent = 'Uploading…';
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const resp = await fetch(`/api/users/${mediaUploadTargetId}/media`, {
+      method: 'POST',
+      body: formData,
+      credentials: 'same-origin'
+    });
+    if (!resp.ok) {
+      const err = await resp.json();
+      throw new Error(err.error || 'Upload failed');
+    }
+    toast('Media uploaded!');
+    loadMediaGallery(mediaUploadTargetId);
+  } catch (err) {
+    toast(err.message, 'error');
+  } finally {
+    if (btn) btn.textContent = '+ Add';
+  }
+}
+
+async function deleteMedia(mediaId, userId) {
+  if (!confirm('Delete this photo/video?')) return;
+  try {
+    await api('DELETE', `/api/media/${mediaId}`);
+    toast('Deleted');
+    loadMediaGallery(userId);
   } catch (err) { toast(err.message, 'error'); }
 }
 

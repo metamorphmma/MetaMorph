@@ -343,6 +343,9 @@
     </div>
   </div>
 
+  <!-- Hidden file input for media uploads -->
+  <input type="file" id="media-file-input" accept="image/*,video/*" hidden onchange="handleMediaFileSelected(event)">
+
   <!-- Admin edit user modal -->
   <div id="admin-edit-modal" class="modal-overlay" hidden onclick="closeAdminEditModal(event)">
     <div class="modal-sheet">
