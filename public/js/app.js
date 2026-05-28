@@ -199,19 +199,36 @@ function renderRosterCard(u) {
 
   const stripesHtml = Array(stripes).fill('<span class="belt-stripe"></span>').join('');
 
-  // Stars: filled ★ (yellow) for earned levels, outline ☆ (dim) for remaining
-  const starsHtml = lvl => [1,2,3,4,5].map(i =>
-    `<span class="lvl-star ${i <= lvl ? 'on' : 'off'}">${i <= lvl ? '★' : '☆'}</span>`
-  ).join('');
+  // Stars: full ★, half ✦, or outline ☆ — supports 0.5 increments
+  const starsHtml = lvl => {
+    let out = '';
+    for (let i = 1; i <= 5; i++) {
+      if (lvl >= i)         out += '<span class="lvl-star on">★</span>';
+      else if (lvl >= i-0.5) out += '<span class="lvl-star half">★</span>';
+      else                   out += '<span class="lvl-star off">☆</span>';
+    }
+    return out;
+  };
 
-  const photoStyle   = u.profile_pic ? 'background:none' : `background:${avatarColor(u)};color:#fff`;
-  const photoContent = u.profile_pic
-    ? `<img src="${u.profile_pic}" alt="${esc(u.name)}">`
-    : `<span>${initials(u.name)}</span>`;
+  // Build scrollable photo strip: profile pic first, then action photos
+  const mediaSlides = [];
+  if (u.profile_pic) {
+    mediaSlides.push(`<div class="card-slide"><img src="${u.profile_pic}" alt="${esc(u.name)}"></div>`);
+  } else {
+    mediaSlides.push(`<div class="card-slide" style="background:${avatarColor(u)};color:#fff;display:flex;align-items:center;justify-content:center"><span style="font-size:32px;font-weight:700">${initials(u.name)}</span></div>`);
+  }
+  if (u.media_urls) {
+    u.media_urls.split('||').forEach(url => {
+      mediaSlides.push(`<div class="card-slide"><img src="${url}" alt=""></div>`);
+    });
+  }
+  const photoArea = mediaSlides.length > 1
+    ? `<div class="card-photo-strip">${mediaSlides.join('')}</div>`
+    : `<div class="card-photo" style="${u.profile_pic ? 'background:none' : `background:${avatarColor(u)};color:#fff`}">${u.profile_pic ? `<img src="${u.profile_pic}" alt="${esc(u.name)}">` : `<span>${initials(u.name)}</span>`}</div>`;
 
   // Row order: Muay Thai → Boxing → Jiu-Jitsu (no inline sig weapon)
   const mtBadge = mtActive
-    ? `<div class="mt-badge"><div class="mt-label-wrap"><span class="mt-label">🥊 Muay Thai</span></div><div class="mt-dots">${starsHtml(mtLevel)}</div></div>`
+    ? `<div class="mt-badge"><div class="mt-label-wrap"><span class="mt-label">🇹🇭 Muay Thai</span></div><div class="mt-dots">${starsHtml(mtLevel)}</div></div>`
     : '';
   const boxingBadge = boxingActive
     ? `<div class="mt-badge"><div class="mt-label-wrap"><span class="mt-label">🥊 Boxing</span></div><div class="mt-dots">${starsHtml(boxingLevel)}</div></div>`
@@ -237,7 +254,7 @@ function renderRosterCard(u) {
 
   return `
     <div class="student-card" onclick="showProfile(${u.id})">
-      <div class="card-photo" style="${photoStyle}">${photoContent}</div>
+      ${photoArea}
       <div class="card-overlay">
         <div class="card-name">${esc(u.name)}</div>
         ${statsLine}
@@ -640,13 +657,13 @@ function selectStripes(n) {
 }
 
 function selectLevel(n) {
-  pendingLevel = n;
-  document.querySelectorAll('#mt-level-selector .level-opt').forEach(b => b.classList.toggle('selected', +b.dataset.level === n));
+  pendingLevel = parseFloat(n);
+  document.querySelectorAll('#mt-level-selector .level-opt').forEach(b => b.classList.toggle('selected', parseFloat(b.dataset.level) === pendingLevel));
 }
 
 function selectBoxingLevel(n) {
-  pendingBoxingLevel = n;
-  document.querySelectorAll('#boxing-level-selector .level-opt').forEach(b => b.classList.toggle('selected', +b.dataset.level === n));
+  pendingBoxingLevel = parseFloat(n);
+  document.querySelectorAll('#boxing-level-selector .level-opt').forEach(b => b.classList.toggle('selected', parseFloat(b.dataset.level) === pendingBoxingLevel));
 }
 
 async function saveCoachAssignment() {

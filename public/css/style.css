@@ -342,6 +342,31 @@ body {
 
 .student-card:active { transform: scale(0.95); }
 
+/* Scrollable photo strip — multiple photos swipeable left/right */
+.card-photo-strip {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  overflow-x: scroll;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.card-photo-strip::-webkit-scrollbar { display: none; }
+.card-slide {
+  flex-shrink: 0;
+  width: 100%;
+  height: 100%;
+  scroll-snap-align: start;
+  overflow: hidden;
+}
+.card-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 /* Photo layer — fills entire card */
 .card-photo {
   position: absolute;
@@ -459,14 +484,24 @@ body {
   line-height: 1.1;
 }
 
-/* Level stars — yellow filled vs dim outline */
+/* Level stars — yellow filled vs dim outline vs half */
 .card-overlay .lvl-star {
   font-size: 11px;
   line-height: 1;
   letter-spacing: -1px;
+  display: inline-block;
 }
 .card-overlay .lvl-star.on  { color: #FFD700; }
 .card-overlay .lvl-star.off { color: rgba(255,255,255,0.18); }
+.card-overlay .lvl-star.half { position: relative; color: rgba(255,255,255,0.18); }
+.card-overlay .lvl-star.half::before {
+  content: '★';
+  position: absolute;
+  left: 0; top: 0;
+  width: 52%;
+  overflow: hidden;
+  color: #FFD700;
+}
 
 /* ── Avatars ── */
 .avatar {

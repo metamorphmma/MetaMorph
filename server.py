@@ -319,6 +319,10 @@ def list_users():
                COALESCE(b.belt,'white') AS belt, COALESCE(b.stripes,0) AS stripes,
                COALESCE(m.level,1) AS mt_level,
                COALESCE(bx.level,1) AS boxing_level,
+               (SELECT GROUP_CONCAT(media_url,'||') FROM (
+                   SELECT media_url FROM student_media
+                   WHERE subject_id=u.id ORDER BY uploaded_at DESC LIMIT 4
+               )) AS media_urls,
                (SELECT CASE WHEN COUNT(*)=1 THEN MAX(weapon) ELSE NULL END FROM (
                     SELECT weapon FROM weapon_assignments WHERE to_user=u.id AND discipline='bjj'
                     GROUP BY weapon HAVING COUNT(*)=(
@@ -612,9 +616,9 @@ def assign_bjj(uid):
 @require_admin
 def assign_mt(uid):
     d     = request.get_json() or {}
-    level = int(d.get('level', 1))
-    if not 1 <= level <= 5:
-        return jsonify({'error': 'Level must be 1-5'}), 400
+    level = round(float(d.get('level', 1)) * 2) / 2   # round to nearest 0.5
+    if not 0.5 <= level <= 5:
+        return jsonify({'error': 'Level must be 0.5-5'}), 400
     db = get_db()
     db.execute('''
         INSERT INTO mt_progress (user_id, level, assigned_by, assigned_at)
@@ -629,9 +633,9 @@ def assign_mt(uid):
 @require_admin
 def assign_boxing(uid):
     d     = request.get_json() or {}
-    level = int(d.get('level', 1))
-    if not 1 <= level <= 5:
-        return jsonify({'error': 'Level must be 1-5'}), 400
+    level = round(float(d.get('level', 1)) * 2) / 2   # round to nearest 0.5
+    if not 0.5 <= level <= 5:
+        return jsonify({'error': 'Level must be 0.5-5'}), 400
     db = get_db()
     db.execute('''
         INSERT INTO boxing_progress (user_id, level, assigned_by, assigned_at)
