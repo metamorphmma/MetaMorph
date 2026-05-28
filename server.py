@@ -371,6 +371,21 @@ def update_profile(uid):
     db.commit()
     return jsonify(get_profile(uid))
 
+@app.route('/api/users/<int:uid>/avatar/url', methods=['POST'])
+@require_auth
+def save_avatar_url(uid):
+    """Store avatar URL after browser has uploaded directly to Cloudinary."""
+    if session['user_id'] != uid:
+        return jsonify({'error': "Cannot edit another user's profile"}), 403
+    d   = request.get_json() or {}
+    url = (d.get('url') or '').strip()
+    if not url.startswith('https://'):
+        return jsonify({'error': 'Invalid URL'}), 400
+    db = get_db()
+    db.execute('UPDATE users SET profile_pic=? WHERE id=?', (url, uid))
+    db.commit()
+    return jsonify({'profile_pic': url})
+
 @app.route('/api/users/<int:uid>/avatar', methods=['POST'])
 @require_auth
 def upload_avatar(uid):

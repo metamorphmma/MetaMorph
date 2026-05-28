@@ -490,8 +490,17 @@ async function handleSaveProfile(e) {
   btn.disabled = true; btn.textContent = 'Saving…';
   try {
     if (pendingAvatarFile) {
-      const base64 = await resizeImage(pendingAvatarFile);
-      const res    = await api('POST', `/api/users/${me.id}/avatar`, { data: base64 });
+      const cloudForm = new FormData();
+      cloudForm.append('file', pendingAvatarFile);
+      cloudForm.append('upload_preset', 'media_upload_cloudinary');
+      cloudForm.append('folder', 'metamorph/avatars');
+      const cloudResp = await fetch('https://api.cloudinary.com/v1_1/dqdmjdrd8/image/upload', {
+        method: 'POST',
+        body: cloudForm
+      });
+      if (!cloudResp.ok) throw new Error('Profile picture upload failed');
+      const cloudData = await cloudResp.json();
+      const res = await api('POST', `/api/users/${me.id}/avatar/url`, { url: cloudData.secure_url });
       me.profile_pic = res.profile_pic;
       renderHeaderAvatar();
       pendingAvatarFile = null;
