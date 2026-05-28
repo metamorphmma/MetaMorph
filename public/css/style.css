@@ -351,6 +351,7 @@ body {
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  touch-action: pan-x;
 }
 .card-photo-strip::-webkit-scrollbar { display: none; }
 .card-slide {
@@ -392,6 +393,7 @@ body {
   position: absolute;
   bottom: 0; left: 0; right: 0;
   padding: 70px 12px 14px;
+  pointer-events: none;   /* let swipe events reach the photo strip underneath */
   background: linear-gradient(
     to top,
     rgba(0,0,0,0.97) 0%,
