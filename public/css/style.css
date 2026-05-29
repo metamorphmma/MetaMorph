@@ -379,6 +379,9 @@ body {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #FFD700;
+  background: rgba(0,0,0,0.82);
+  padding: 3px 7px;
+  border-radius: 6px;
   animation: swipe-blink 1.4s ease-in-out infinite;
 }
 @keyframes swipe-blink {
@@ -453,7 +456,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 5px;
+  gap: 2px;
 }
 
 /* Belt badge inside card */
