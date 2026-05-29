@@ -231,7 +231,7 @@ function renderRosterCard(u) {
     });
   }
   const swipeHint = mediaSlides.length > 1
-    ? `<div class="card-swipe-hint">${mediaSlides.map((_,i) => `<span class="csh-dot${i===0?' act':''}"></span>`).join('')}</div>`
+    ? `<div class="card-swipe-hint">swipe me!</div>`
     : '';
   const photoArea = mediaSlides.length > 1
     ? `<div class="card-photo-strip">${mediaSlides.join('')}</div>${swipeHint}`

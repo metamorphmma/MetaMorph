@@ -368,24 +368,22 @@ body {
   display: block;
 }
 
-/* Swipe hint dots — top right of card */
+/* Swipe hint — top right of card */
 .card-swipe-hint {
   position: absolute;
   top: 8px; right: 8px;
   z-index: 10;
-  display: flex;
-  gap: 4px;
   pointer-events: none;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #FFD700;
+  animation: swipe-blink 1.4s ease-in-out infinite;
 }
-.csh-dot {
-  width: 5px; height: 5px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.35);
-}
-.csh-dot.act {
-  background: rgba(255,255,255,0.9);
-  width: 8px;
-  border-radius: 3px;
+@keyframes swipe-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.15; }
 }
 
 /* Admin edit modal — discipline toggles */

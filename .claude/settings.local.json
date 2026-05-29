@@ -9,7 +9,8 @@
       "Bash(mkdir -p \"C:\\\\Users\\\\esabe\\\\OneDrive\\\\Desktop\\\\FightCo\\\\Initiatives\\\\Engagement app\\\\.claude\")",
       "mcp__Claude_Preview__preview_start",
       "Bash(python -c \"import server; print\\('server.py loads OK'\\)\")",
-      "Bash(python -c \"import server; print\\('OK'\\)\")"
+      "Bash(python -c \"import server; print\\('OK'\\)\")",
+      "Bash(pip install *)"
     ]
   }
 }
