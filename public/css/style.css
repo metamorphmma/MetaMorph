@@ -438,6 +438,14 @@ body {
   gap: 6px;
 }
 
+/* Name + stats on one line, wraps if name is long */
+.card-name-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 5px;
+  width: 100%;
+}
 .card-name {
   font-size: 15px;
   font-weight: 800;
@@ -1052,11 +1060,11 @@ body {
 .card-watchout {
   width: 100%;
   border-top: 1px solid rgba(255,255,255,0.1);
-  padding-top: 6px;
-  margin-top: 4px;
+  padding-top: 4px;
+  margin-top: 0px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 }
 
 .card-watchout-label {
@@ -1082,14 +1090,14 @@ body {
   color: rgba(255,255,255,0.32);
 }
 
-/* ── Card stats line (height · weight) ── */
-.card-stats {
+/* ── Card stats inline (height · weight beside name) ── */
+.card-stats-inline {
   font-size: 10px;
   color: rgba(255,255,255,0.4);
   font-weight: 500;
   letter-spacing: 0.03em;
-  margin-top: -2px;
-  margin-bottom: 3px;
+  white-space: nowrap;
+  line-height: 1.2;
 }
 
 /* ── Lightbox ── */

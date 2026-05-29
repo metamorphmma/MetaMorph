@@ -261,14 +261,15 @@ function renderRosterCard(u) {
      </div>`;
 
   const statParts = [u.height_cm ? `${u.height_cm} cm` : '', u.weight_kg ? `${u.weight_kg} kg` : ''].filter(Boolean);
-  const statsLine = statParts.length ? `<div class="card-stats">${statParts.join(' · ')}</div>` : '';
+  const statsInline = statParts.length ? `<span class="card-stats-inline">${statParts.join(' · ')}</span>` : '';
 
   return `
     <div class="student-card" onclick="showProfile(${u.id})">
       ${photoArea}
       <div class="card-overlay">
-        <div class="card-name">${esc(u.name)}</div>
-        ${statsLine}
+        <div class="card-name-row">
+          <span class="card-name">${esc(u.name)}</span>${statsInline}
+        </div>
         ${badgesHtml}
         ${watchoutHtml}
       </div>
