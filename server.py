@@ -651,12 +651,10 @@ def assign_boxing(uid):
 @app.route('/api/admin/users/<int:uid>/edit', methods=['PUT'])
 @require_admin
 def admin_edit_user(uid):
-    """Admin: change a user's name and/or password."""
+    """Admin: edit any aspect of a student's profile."""
     d        = request.get_json() or {}
     name     = (d.get('name') or '').strip()
     password = (d.get('password') or '')
-    if not name and not password:
-        return jsonify({'error': 'Provide a new name or password'}), 400
     db = get_db()
     if name:
         clash = db.execute(
@@ -670,6 +668,16 @@ def admin_edit_user(uid):
             return jsonify({'error': 'Password must be at least 4 characters'}), 400
         pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
         db.execute('UPDATE users SET password_hash=? WHERE id=?', (pw_hash, uid))
+    if 'height_cm' in d:
+        db.execute('UPDATE users SET height_cm=? WHERE id=?', (d['height_cm'], uid))
+    if 'weight_kg' in d:
+        db.execute('UPDATE users SET weight_kg=? WHERE id=?', (d['weight_kg'], uid))
+    if 'mt_active' in d:
+        db.execute('UPDATE users SET mt_active=? WHERE id=?', (int(d['mt_active']), uid))
+    if 'boxing_active' in d:
+        db.execute('UPDATE users SET boxing_active=? WHERE id=?', (int(d['boxing_active']), uid))
+    if 'bjj_active' in d:
+        db.execute('UPDATE users SET bjj_active=? WHERE id=?', (int(d['bjj_active']), uid))
     db.commit()
     p = get_profile(uid)
     return jsonify(p) if p else (jsonify({'error': 'User not found'}), 404)

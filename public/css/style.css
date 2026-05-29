@@ -368,6 +368,37 @@ body {
   display: block;
 }
 
+/* Swipe hint dots — top right of card */
+.card-swipe-hint {
+  position: absolute;
+  top: 8px; right: 8px;
+  z-index: 10;
+  display: flex;
+  gap: 4px;
+  pointer-events: none;
+}
+.csh-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.35);
+}
+.csh-dot.act {
+  background: rgba(255,255,255,0.9);
+  width: 8px;
+  border-radius: 3px;
+}
+
+/* Admin edit modal — discipline toggles */
+.admin-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.admin-toggle-row:last-child { border-bottom: none; }
+.admin-toggle-label { font-size: 14px; color: var(--white2); }
+
 /* Photo layer — fills entire card */
 .card-photo {
   position: absolute;

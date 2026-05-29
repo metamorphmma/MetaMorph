@@ -378,12 +378,45 @@
 
       <div class="modal-section" style="gap:14px">
         <div class="field">
-          <label>New Name <span class="field-optional">(leave blank to keep)</span></label>
+          <label>Name <span class="field-optional">(leave blank to keep)</span></label>
           <input type="text" id="admin-edit-name" placeholder="Current name" autocomplete="off">
         </div>
         <div class="field">
-          <label>New Password <span class="field-optional">(leave blank to keep)</span></label>
+          <label>Password <span class="field-optional">(leave blank to keep)</span></label>
           <input type="password" id="admin-edit-password" placeholder="Min 4 characters" minlength="4" autocomplete="new-password">
+        </div>
+        <div class="field">
+          <label>Height (cm) <span class="field-optional">(optional)</span></label>
+          <input type="number" id="admin-edit-height" placeholder="e.g. 175" min="100" max="250">
+        </div>
+        <div class="field">
+          <label>Weight (kg) <span class="field-optional">(optional)</span></label>
+          <input type="number" id="admin-edit-weight" placeholder="e.g. 75" min="30" max="200" step="0.1">
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="section-label">Disciplines</div>
+        <div class="admin-toggle-row">
+          <span class="admin-toggle-label">🇹🇭 Muay Thai</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="admin-edit-mt">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="admin-toggle-row">
+          <span class="admin-toggle-label">🥊 Boxing</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="admin-edit-boxing">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="admin-toggle-row">
+          <span class="admin-toggle-label">🥋 Jiu-Jitsu</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="admin-edit-bjj">
+            <span class="toggle-slider"></span>
+          </label>
         </div>
       </div>
 

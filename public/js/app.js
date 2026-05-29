@@ -12,28 +12,36 @@ let weaponsTargetId     = null;
 let selectedWeapons     = { bjj: [], mt: [], boxing: [] };
 let adminEditTargetId   = null;
 
-/* ── Weapon lists (20 per discipline) ── */
+/* ── Weapon lists ── */
 const WEAPONS = {
   bjj: [
     'Single Leg',     'Double Leg',      'Osoto Gari',     'Sweep from Guard',
     'Rear Naked Choke','Triangle',        'Kimura',         'Armbar',
     'Guillotine',     'Omoplata',        "D'Arce Choke",   'Heel Hook',
     'Bow & Arrow',    'Ezekiel Choke',   'Half Guard Sweep','Berimbolo',
-    'X-Guard',        'Back Take',       'Hip Bump Sweep', 'Ankle Lock'
+    'X-Guard',        'Back Take',       'Hip Bump Sweep', 'Ankle Lock',
+    'Banana Split',   'Calf Slicer',     'Wrist Lock',     'Toehold',
+    'Arm Triangle',   'Crucifix',        'Baseball Choke', 'Loop Choke',
+    'North-South Choke','Truck Position'
   ],
   mt: [
     'Jab',            'Cross',           'Hook',           'Feints',
     'Push Kick',      'Low Kick',        'Middle Kick',    'High Kick',
     'Clinch',         'Knee Strike',     'Elbow Strike',   'Switch Kick',
     'Spinning Back Kick','Diagonal Kick','Roundhouse',     'Body Kick',
-    'Rear Teep',      'Overhand',        'Uppercut',       'Counter Right'
+    'Rear Teep',      'Overhand',        'Uppercut',       'Counter Right',
+    'Flying Knee',    'Jumping Knee',    'Axe Kick',       'Step-in Elbow',
+    'Superman Punch', 'Liver Kick',      'Sweep',          'Spinning Heel Kick'
   ],
   boxing: [
     'Footwork',       'Jab',             'Cross',          'Hook',
     'Uppercut',       'Body Shot',       'Liver Shot',     'Slips',
     'Weaves',         'Cutting Angles',  'Overhand',       'Check Hook',
     'Double Jab',     'Body Jab',        'Philly Shell',   'Peek-a-boo',
-    'Shoulder Roll',  'Counter Punching','Jab Step',       'Pivot'
+    'Shoulder Roll',  'Counter Punching','Jab Step',       'Pivot',
+    'Lead Uppercut',  'Straight Right to Body','Left Hook to Body','Pull Counter',
+    'Catch and Shoot','Inside Fighting', 'Bolo Punch',     'Gazelle Jab',
+    'Pawing Jab',     'Southpaw Switch'
   ]
 };
 
@@ -222,8 +230,11 @@ function renderRosterCard(u) {
       mediaSlides.push(`<div class="card-slide"><img src="${url}" alt=""></div>`);
     });
   }
+  const swipeHint = mediaSlides.length > 1
+    ? `<div class="card-swipe-hint">${mediaSlides.map((_,i) => `<span class="csh-dot${i===0?' act':''}"></span>`).join('')}</div>`
+    : '';
   const photoArea = mediaSlides.length > 1
-    ? `<div class="card-photo-strip">${mediaSlides.join('')}</div>`
+    ? `<div class="card-photo-strip">${mediaSlides.join('')}</div>${swipeHint}`
     : `<div class="card-photo" style="${u.profile_pic ? 'background:none' : `background:${avatarColor(u)};color:#fff`}">${u.profile_pic ? `<img src="${u.profile_pic}" alt="${esc(u.name)}">` : `<span>${initials(u.name)}</span>`}</div>`;
 
   // Row order: Muay Thai → Boxing → Jiu-Jitsu (no inline sig weapon)
@@ -749,11 +760,25 @@ async function saveWeaponAssignment() {
 }
 
 /* ── Admin: edit user ── */
-function openAdminEditModal(userId, name) {
+async function openAdminEditModal(userId, name) {
   adminEditTargetId = userId;
   document.getElementById('admin-edit-modal-name').textContent = name;
   document.getElementById('admin-edit-name').value     = name;
   document.getElementById('admin-edit-password').value = '';
+  document.getElementById('admin-edit-height').value   = '';
+  document.getElementById('admin-edit-weight').value   = '';
+  document.getElementById('admin-edit-mt').checked     = true;
+  document.getElementById('admin-edit-boxing').checked = true;
+  document.getElementById('admin-edit-bjj').checked    = true;
+  // Pre-populate with existing profile data
+  try {
+    const u = await api('GET', `/api/users/${userId}`);
+    if (u.height_cm) document.getElementById('admin-edit-height').value = u.height_cm;
+    if (u.weight_kg) document.getElementById('admin-edit-weight').value = u.weight_kg;
+    document.getElementById('admin-edit-mt').checked     = !!u.mt_active;
+    document.getElementById('admin-edit-boxing').checked = !!u.boxing_active;
+    document.getElementById('admin-edit-bjj').checked    = !!u.bjj_active;
+  } catch { /* use defaults */ }
   document.getElementById('admin-edit-modal').hidden   = false;
   document.body.style.overflow = 'hidden';
 }
@@ -766,13 +791,20 @@ function closeAdminEditModal(e) {
 }
 
 async function saveAdminEdit() {
-  const name     = document.getElementById('admin-edit-name').value.trim();
-  const password = document.getElementById('admin-edit-password').value;
-  if (!name && !password) { toast('Enter a name or password to update', 'error'); return; }
+  const name      = document.getElementById('admin-edit-name').value.trim();
+  const password  = document.getElementById('admin-edit-password').value;
+  const height_cm = document.getElementById('admin-edit-height').value;
+  const weight_kg = document.getElementById('admin-edit-weight').value;
+  const mt_active     = document.getElementById('admin-edit-mt').checked     ? 1 : 0;
+  const boxing_active = document.getElementById('admin-edit-boxing').checked ? 1 : 0;
+  const bjj_active    = document.getElementById('admin-edit-bjj').checked    ? 1 : 0;
   try {
     await api('PUT', `/api/admin/users/${adminEditTargetId}/edit`, {
-      name:     name     || undefined,
-      password: password || undefined,
+      name:         name     || undefined,
+      password:     password || undefined,
+      height_cm:    height_cm ? parseInt(height_cm) : undefined,
+      weight_kg:    weight_kg ? parseFloat(weight_kg) : undefined,
+      mt_active, boxing_active, bjj_active,
     });
     document.getElementById('admin-edit-modal').hidden = true;
     document.body.style.overflow = '';
