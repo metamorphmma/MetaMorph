@@ -346,7 +346,7 @@ def list_users():
         LEFT JOIN mt_progress     m  ON u.id = m.user_id
         LEFT JOIN boxing_progress bx ON u.id = bx.user_id
         WHERE u.role = 'student' AND u.status = 'approved'
-        ORDER BY u.name
+        ORDER BY (u.profile_pic IS NULL), u.name
     ''').fetchall()
     return jsonify([dict(r) for r in rows])
 
