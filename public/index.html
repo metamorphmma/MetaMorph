@@ -447,16 +447,12 @@
       <div class="modal-section">
         <div class="section-label">Select Amount</div>
         <div class="debit-amounts">
-          <button class="debit-amt-btn" onclick="selectDebitAmount(50)">50</button>
-          <button class="debit-amt-btn" onclick="selectDebitAmount(100)">100</button>
-          <button class="debit-amt-btn" onclick="selectDebitAmount(200)">200</button>
-          <button class="debit-amt-btn" onclick="selectDebitAmount(500)">500</button>
+          <button class="debit-amt-btn" data-val="50"  onclick="selectDebitAmount(50)">$50.0</button>
+          <button class="debit-amt-btn" data-val="100" onclick="selectDebitAmount(100)">$100.0</button>
+          <button class="debit-amt-btn" data-val="200" onclick="selectDebitAmount(200)">$200.0</button>
+          <button class="debit-amt-btn" data-val="500" onclick="selectDebitAmount(500)">$500.0</button>
         </div>
         <div class="field" style="margin-top:10px">
-          <label>Custom amount</label>
-          <input type="number" id="debit-custom-amount" placeholder="Enter amount" min="1" step="1" oninput="onDebitCustomInput()">
-        </div>
-        <div class="field">
           <label>What's it for? <span class="field-optional">(optional)</span></label>
           <input type="text" id="debit-description" placeholder="e.g. Training fee, Gear">
         </div>

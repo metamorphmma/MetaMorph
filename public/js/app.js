@@ -428,17 +428,15 @@ function renderProfile(user) {
         <span>💰 MetaDollars</span>
         ${isAdmin ? `<button class="btn-upload-media" onclick="openWalletAdjustModal(${user.id},'${esc(user.name)}')">Adjust</button>` : ''}
       </div>
-      <div class="wallet-profile-balance">${Math.floor(user.meta_dollars || 0).toLocaleString()}</div>
+      <div class="wallet-profile-balance">${fmtMD(user.meta_dollars || 0)}</div>
       <div class="wallet-profile-label">MetaDollars</div>
     </div>` : '';
 
   document.getElementById('profile-content').innerHTML = `
     <div class="profile-wrap">
       <div class="profile-hero">
-        <div class="avatar-container">
-          <div class="avatar avatar-lg" style="${avatarStyle(user)}">${avatarContent(user)}</div>
-          ${user.unique_code ? `<div class="unique-code-badge">◆ ${esc(user.unique_code)}</div>` : ''}
-        </div>
+        ${user.unique_code ? `<div class="unique-code-badge">◆ ${esc(user.unique_code)}</div>` : ''}
+        <div class="avatar avatar-lg" style="${avatarStyle(user)}">${avatarContent(user)}</div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
           <div class="profile-name">${esc(user.name)}</div>
           <div class="profile-stats">
@@ -669,7 +667,7 @@ async function loadWalletActivity() {
           <div class="txn-desc"><strong>${esc(t.student_name)}</strong> — ${esc(t.description || 'Transaction')}</div>
           <div class="txn-meta">${date} · by ${esc(t.actor_name)}</div>
         </div>
-        <div class="txn-amount ${cls}">${sign}${Math.abs(t.amount).toFixed(0)} MD</div>
+        <div class="txn-amount ${cls}">${sign}${fmtMD(Math.abs(t.amount))}</div>
       </div>`;
     }).join('') + '</div>';
   } catch {
@@ -912,8 +910,10 @@ async function showWallet() {
   }
 }
 
+const fmtMD = n => '$' + (n || 0).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
 function renderWallet(data) {
-  const balance = Math.floor(data.balance || 0);
+  const balance = data.balance || 0;
   const txns    = data.transactions || [];
 
   const txnRows = txns.length
@@ -926,7 +926,7 @@ function renderWallet(data) {
             <div class="txn-desc">${esc(t.description || 'Transaction')}</div>
             <div class="txn-meta">${date} · by ${esc(t.actor_name)}</div>
           </div>
-          <div class="txn-amount ${cls}">${sign}${Math.abs(t.amount).toFixed(0)}</div>
+          <div class="txn-amount ${cls}">${sign}${fmtMD(Math.abs(t.amount))}</div>
         </div>`;
       }).join('')
     : '<div class="empty-state" style="padding:24px 0"><p>No transactions yet.</p></div>';
@@ -934,7 +934,7 @@ function renderWallet(data) {
   document.getElementById('wallet-content').innerHTML = `
     <div class="wallet-hero">
       <div class="wallet-balance-label">Your Balance</div>
-      <div class="wallet-balance">${balance.toLocaleString()}</div>
+      <div class="wallet-balance">${fmtMD(balance)}</div>
       <div class="wallet-currency">MetaDollars</div>
       <button class="btn btn-primary" style="padding:14px 40px"
         onclick="openDebitModal(${balance})"${balance <= 0 ? ' disabled' : ''}>
@@ -949,9 +949,8 @@ function renderWallet(data) {
 function openDebitModal(balance) {
   selectedDebitAmount = null;
   document.getElementById('debit-balance-display').textContent =
-    `Balance: ${Math.floor(balance).toLocaleString()} MetaDollars`;
-  document.getElementById('debit-custom-amount').value = '';
-  document.getElementById('debit-description').value   = '';
+    `Balance: ${fmtMD(balance)} MetaDollars`;
+  document.getElementById('debit-description').value = '';
   document.querySelectorAll('.debit-amt-btn').forEach(b => b.classList.remove('selected'));
   document.getElementById('debit-modal').hidden = false;
   document.body.style.overflow = 'hidden';
@@ -967,21 +966,12 @@ function closeDebitModal(e) {
 function selectDebitAmount(n) {
   selectedDebitAmount = n;
   document.querySelectorAll('.debit-amt-btn').forEach(b =>
-    b.classList.toggle('selected', parseInt(b.textContent) === n));
-  document.getElementById('debit-custom-amount').value = '';
-}
-
-function onDebitCustomInput() {
-  const val = parseInt(document.getElementById('debit-custom-amount').value);
-  if (val > 0) {
-    selectedDebitAmount = val;
-    document.querySelectorAll('.debit-amt-btn').forEach(b => b.classList.remove('selected'));
-  }
+    b.classList.toggle('selected', parseFloat(b.dataset.val) === n));
 }
 
 async function confirmDebit() {
   if (!selectedDebitAmount || selectedDebitAmount <= 0) {
-    toast('Select or enter an amount first', 'error'); return;
+    toast('Select an amount first', 'error'); return;
   }
   const btn  = document.getElementById('debit-confirm-btn');
   const desc = document.getElementById('debit-description').value || 'Purchase';
@@ -990,9 +980,8 @@ async function confirmDebit() {
     const result = await api('POST', '/api/wallet/debit', { amount: selectedDebitAmount, description: desc });
     document.getElementById('debit-modal').hidden = true;
     document.body.style.overflow = '';
-    toast(`${selectedDebitAmount} MetaDollars used ✓`);
-    renderWallet({ balance: result.balance, transactions: [] });
-    // Refresh full wallet (gets updated history)
+    toast(`${fmtMD(selectedDebitAmount)} MetaDollars used ✓`);
+    // Refresh full wallet
     const fresh = await api('GET', '/api/wallet');
     renderWallet(fresh);
   } catch (err) {
@@ -1014,7 +1003,7 @@ async function openWalletAdjustModal(userId, name) {
   try {
     const u = await api('GET', `/api/users/${userId}`);
     document.getElementById('wallet-adjust-balance-display').textContent =
-      `Current balance: ${Math.floor(u.meta_dollars || 0).toLocaleString()} MetaDollars`;
+      `Current balance: ${fmtMD(u.meta_dollars || 0)} MetaDollars`;
   } catch { document.getElementById('wallet-adjust-balance-display').textContent = ''; }
 }
 
@@ -1034,7 +1023,7 @@ async function saveWalletAdjust() {
     document.getElementById('wallet-adjust-modal').hidden = true;
     document.body.style.overflow = '';
     const verb = amount > 0 ? 'Added' : 'Deducted';
-    toast(`${verb} ${Math.abs(amount)} MD — new balance: ${Math.floor(result.balance).toLocaleString()}`);
+    toast(`${verb} ${fmtMD(Math.abs(amount))} — new balance: ${fmtMD(result.balance)}`);
     showProfile(walletAdjustTargetId);
   } catch (err) { toast(err.message, 'error'); }
 }
