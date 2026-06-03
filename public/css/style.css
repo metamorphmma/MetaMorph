@@ -1403,31 +1403,6 @@ body {
 .txn-credit { color: var(--win); }
 .txn-debit  { color: var(--loss); }
 
-/* Debit amount chips */
-.debit-amounts {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
-
-.debit-amt-btn {
-  padding: 12px 6px;
-  background: var(--card2);
-  border: 1.5px solid var(--border2);
-  border-radius: var(--radius-sm);
-  color: var(--white2);
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  text-align: center;
-  transition: all 0.12s;
-}
-
-.debit-amt-btn.selected {
-  background: rgba(255,215,0,0.1);
-  border-color: #FFD700;
-  color: #FFD700;
-}
 
 /* Admin wallet balance display in modal */
 .wallet-adjust-balance {

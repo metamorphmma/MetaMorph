@@ -947,13 +947,13 @@ function renderWallet(data) {
 
 // ── Debit flow ──
 function openDebitModal(balance) {
-  selectedDebitAmount = null;
   document.getElementById('debit-balance-display').textContent =
     `Balance: ${fmtMD(balance)} MetaDollars`;
-  document.getElementById('debit-description').value = '';
-  document.querySelectorAll('.debit-amt-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('debit-amount-input').value = '';
+  document.getElementById('debit-description').value  = '';
   document.getElementById('debit-modal').hidden = false;
   document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('debit-amount-input').focus(), 120);
 }
 
 function closeDebitModal(e) {
@@ -963,25 +963,19 @@ function closeDebitModal(e) {
   }
 }
 
-function selectDebitAmount(n) {
-  selectedDebitAmount = n;
-  document.querySelectorAll('.debit-amt-btn').forEach(b =>
-    b.classList.toggle('selected', parseFloat(b.dataset.val) === n));
-}
-
 async function confirmDebit() {
-  if (!selectedDebitAmount || selectedDebitAmount <= 0) {
-    toast('Select an amount first', 'error'); return;
+  const amount = parseFloat(document.getElementById('debit-amount-input').value);
+  if (!amount || amount <= 0) {
+    toast('Enter an amount first', 'error'); return;
   }
   const btn  = document.getElementById('debit-confirm-btn');
   const desc = document.getElementById('debit-description').value || 'Purchase';
   btn.disabled = true; btn.textContent = 'Processing…';
   try {
-    const result = await api('POST', '/api/wallet/debit', { amount: selectedDebitAmount, description: desc });
+    const result = await api('POST', '/api/wallet/debit', { amount, description: desc });
     document.getElementById('debit-modal').hidden = true;
     document.body.style.overflow = '';
-    toast(`${fmtMD(selectedDebitAmount)} MetaDollars used ✓`);
-    // Refresh full wallet
+    toast(`${fmtMD(amount)} MetaDollars used ✓`);
     const fresh = await api('GET', '/api/wallet');
     renderWallet(fresh);
   } catch (err) {
