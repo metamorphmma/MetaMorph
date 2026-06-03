@@ -184,6 +184,33 @@ def seed_unique_codes():
 
 seed_unique_codes()
 
+def seed_starting_balance():
+    """Credit every user who hasn't received a starting balance yet with $5.0."""
+    with sqlite3.connect(DB_PATH) as db:
+        # Only users with no 'Starting balance' transaction ever get one
+        users = db.execute('''
+            SELECT id FROM users
+            WHERE NOT EXISTS (
+                SELECT 1 FROM meta_transactions
+                WHERE user_id = users.id
+                AND   description = 'Starting balance'
+            )
+        ''').fetchall()
+        if not users:
+            return
+        admin = db.execute("SELECT id FROM users WHERE role='admin' LIMIT 1").fetchone()
+        for (uid,) in users:
+            gifter_id = admin[0] if admin else uid
+            db.execute('UPDATE users SET meta_dollars = meta_dollars + 5.0 WHERE id=?', (uid,))
+            db.execute(
+                'INSERT INTO meta_transactions (user_id, amount, description, created_by) '
+                'VALUES (?,?,?,?)',
+                (uid, 5.0, 'Starting balance', gifter_id)
+            )
+        db.commit()
+
+seed_starting_balance()
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def get_profile(user_id):
@@ -298,6 +325,14 @@ def register():
     uid  = cur.lastrowid
     code = generate_unique_code(db)
     db.execute('UPDATE users SET unique_code=? WHERE id=?', (code, uid))
+    # Grant $5 starting balance
+    db.execute('UPDATE users SET meta_dollars=5.0 WHERE id=?', (uid,))
+    admin_row = db.execute("SELECT id FROM users WHERE role='admin' LIMIT 1").fetchone()
+    gifter_id = admin_row['id'] if admin_row else uid
+    db.execute(
+        'INSERT INTO meta_transactions (user_id, amount, description, created_by) VALUES (?,?,?,?)',
+        (uid, 5.0, 'Starting balance', gifter_id)
+    )
     db.commit()
 
     if role == 'student':
