@@ -11,6 +11,10 @@ let pendingAvatarFile   = null;
 let weaponsTargetId     = null;
 let selectedWeapons     = { bjj: [], mt: [], boxing: [] };
 let adminEditTargetId   = null;
+let walletAdjustTargetId = null;
+let selectedDebitAmount  = null;
+let pendingCredentials   = null;
+let approvalPoller       = null;
 
 /* ── Weapon lists ── */
 const WEAPONS = {
@@ -65,6 +69,7 @@ function showApp() {
 
   const isAdmin = me && me.role === 'admin';
   document.getElementById('nav-profile').hidden  = isAdmin;
+  document.getElementById('nav-wallet').hidden   = isAdmin;
   document.getElementById('nav-pending').hidden  = !isAdmin;
 
   if (isAdmin) refreshPendingBadge();
@@ -100,6 +105,7 @@ function showView(name, trackPrev = true) {
 
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   if (name === 'roster')  document.getElementById('nav-home')?.classList.add('active');
+  if (name === 'wallet')  document.getElementById('nav-wallet')?.classList.add('active');
   if (name === 'admin')   document.getElementById('nav-pending')?.classList.add('active');
   if (name === 'profile' && viewingId === me?.id) document.getElementById('nav-profile')?.classList.add('active');
 }
@@ -153,7 +159,8 @@ async function handleRegister(e) {
   try {
     const data = await api('POST', '/api/auth/register', { name, password, adminCode });
     if (data.code === 'pending') {
-      // Show pending screen — student not yet logged in
+      // Show pending screen and start polling for approval
+      startApprovalPolling(name, password);
       showView('pending', false);
       document.getElementById('app-header').hidden = false;
       document.getElementById('bottom-nav').hidden = true;
@@ -171,11 +178,48 @@ async function handleRegister(e) {
 }
 
 async function handleLogout() {
+  stopApprovalPolling();
   await api('POST', '/api/auth/logout');
   me = null;
   document.getElementById('app-header').hidden = true;
   document.getElementById('bottom-nav').hidden = true;
   showView('auth', false);
+}
+
+/* ── Approval polling ── */
+function startApprovalPolling(name, password) {
+  pendingCredentials = { name, password };
+  if (approvalPoller) clearInterval(approvalPoller);
+  approvalPoller = setInterval(async () => {
+    if (!pendingCredentials) return;
+    try {
+      const data = await api('POST', '/api/auth/login', pendingCredentials);
+      if (data.user) {
+        stopApprovalPolling();
+        me = data.user;
+        showApp();
+        showRoster();
+        showApprovalPopup(data.user.name);
+      }
+    } catch { /* still pending — keep polling */ }
+  }, 5000);
+}
+
+function stopApprovalPolling() {
+  if (approvalPoller) { clearInterval(approvalPoller); approvalPoller = null; }
+  pendingCredentials = null;
+}
+
+function showApprovalPopup(name) {
+  document.getElementById('approval-name-text').textContent = name;
+  const popup = document.getElementById('approval-popup');
+  // Re-trigger the bar animation by forcing a reflow
+  const bar = document.getElementById('approval-bar');
+  bar.style.animation = 'none';
+  bar.offsetHeight;
+  bar.style.animation = '';
+  popup.hidden = false;
+  setTimeout(() => { popup.hidden = true; }, 4000);
 }
 
 /* ── Roster ── */
@@ -377,10 +421,24 @@ function renderProfile(user) {
       </div>`
     : '';
 
+  // Wallet section — visible to own profile and admin only
+  const walletSection = (isOwn || isAdmin) && user.meta_dollars !== undefined ? `
+    <div class="profile-section">
+      <div class="profile-section-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>💰 MetaDollars</span>
+        ${isAdmin ? `<button class="btn-upload-media" onclick="openWalletAdjustModal(${user.id},'${esc(user.name)}')">Adjust</button>` : ''}
+      </div>
+      <div class="wallet-profile-balance">${Math.floor(user.meta_dollars || 0).toLocaleString()}</div>
+      <div class="wallet-profile-label">MetaDollars</div>
+    </div>` : '';
+
   document.getElementById('profile-content').innerHTML = `
     <div class="profile-wrap">
       <div class="profile-hero">
-        <div class="avatar avatar-lg" style="${avatarStyle(user)}">${avatarContent(user)}</div>
+        <div class="avatar-container">
+          <div class="avatar avatar-lg" style="${avatarStyle(user)}">${avatarContent(user)}</div>
+          ${user.unique_code ? `<div class="unique-code-badge">◆ ${esc(user.unique_code)}</div>` : ''}
+        </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
           <div class="profile-name">${esc(user.name)}</div>
           <div class="profile-stats">
@@ -393,6 +451,7 @@ function renderProfile(user) {
       ${mtSection}
       ${boxingSection}
       ${weaponsSection}
+      ${walletSection}
       <div class="profile-section" id="media-section">
         <div class="profile-section-title" style="display:flex;align-items:center;justify-content:space-between">
           <span>📸 In Action</span>
@@ -572,22 +631,49 @@ async function showPendingApprovals() {
     updatePendingBadge(users.length);
     if (!users.length) {
       list.innerHTML = '<div class="empty-state"><p>No pending registrations.</p></div>';
-      return;
+    } else {
+      list.innerHTML = users.map(u => `
+        <div class="pending-card" id="pcard-${u.id}">
+          <div class="avatar avatar-sm" style="${avatarStyle(u)}">${avatarContent(u)}</div>
+          <div class="pending-card-info">
+            <div class="pending-card-name">${esc(u.name)}</div>
+            <div class="pending-card-sub">Pending registration</div>
+          </div>
+          <div class="pending-actions">
+            <button class="btn btn-ghost btn-sm" onclick="rejectUser(${u.id})">Reject</button>
+            <button class="btn btn-primary btn-sm" onclick="approveUser(${u.id})">Approve</button>
+          </div>
+        </div>`).join('');
     }
-    list.innerHTML = users.map(u => `
-      <div class="pending-card" id="pcard-${u.id}">
-        <div class="avatar avatar-sm" style="${avatarStyle(u)}">${avatarContent(u)}</div>
-        <div class="pending-card-info">
-          <div class="pending-card-name">${esc(u.name)}</div>
-          <div class="pending-card-sub">Pending registration</div>
-        </div>
-        <div class="pending-actions">
-          <button class="btn btn-ghost btn-sm" onclick="rejectUser(${u.id})">Reject</button>
-          <button class="btn btn-primary btn-sm" onclick="approveUser(${u.id})">Approve</button>
-        </div>
-      </div>`).join('');
   } catch {
     list.innerHTML = '<div class="empty-state"><p>Could not load.</p></div>';
+  }
+  loadWalletActivity();
+}
+
+async function loadWalletActivity() {
+  const el = document.getElementById('wallet-activity-list');
+  if (!el) return;
+  try {
+    const txns = await api('GET', '/api/admin/wallet/activity');
+    if (!txns.length) {
+      el.innerHTML = '<div class="empty-state" style="padding:20px 0"><p>No wallet transactions yet.</p></div>';
+      return;
+    }
+    el.innerHTML = '<div class="txn-list">' + txns.map(t => {
+      const sign  = t.amount > 0 ? '+' : '−';
+      const cls   = t.amount > 0 ? 'txn-credit' : 'txn-debit';
+      const date  = new Date(t.created_at + 'Z').toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
+      return `<div class="txn-item">
+        <div class="txn-info">
+          <div class="txn-desc"><strong>${esc(t.student_name)}</strong> — ${esc(t.description || 'Transaction')}</div>
+          <div class="txn-meta">${date} · by ${esc(t.actor_name)}</div>
+        </div>
+        <div class="txn-amount ${cls}">${sign}${Math.abs(t.amount).toFixed(0)} MD</div>
+      </div>`;
+    }).join('') + '</div>';
+  } catch {
+    el.innerHTML = '<div class="empty-state" style="padding:20px 0"><p>Could not load activity.</p></div>';
   }
 }
 
@@ -811,6 +897,145 @@ async function saveAdminEdit() {
     document.body.style.overflow = '';
     toast('User updated!');
     showProfile(adminEditTargetId);
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+/* ── Wallet ── */
+async function showWallet() {
+  showView('wallet', false);
+  document.getElementById('wallet-content').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  try {
+    const data = await api('GET', '/api/wallet');
+    renderWallet(data);
+  } catch {
+    document.getElementById('wallet-content').innerHTML = '<div class="empty-state"><p>Could not load wallet.</p></div>';
+  }
+}
+
+function renderWallet(data) {
+  const balance = Math.floor(data.balance || 0);
+  const txns    = data.transactions || [];
+
+  const txnRows = txns.length
+    ? txns.map(t => {
+        const sign  = t.amount > 0 ? '+' : '−';
+        const cls   = t.amount > 0 ? 'txn-credit' : 'txn-debit';
+        const date  = new Date(t.created_at + 'Z').toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
+        return `<div class="txn-item">
+          <div class="txn-info">
+            <div class="txn-desc">${esc(t.description || 'Transaction')}</div>
+            <div class="txn-meta">${date} · by ${esc(t.actor_name)}</div>
+          </div>
+          <div class="txn-amount ${cls}">${sign}${Math.abs(t.amount).toFixed(0)}</div>
+        </div>`;
+      }).join('')
+    : '<div class="empty-state" style="padding:24px 0"><p>No transactions yet.</p></div>';
+
+  document.getElementById('wallet-content').innerHTML = `
+    <div class="wallet-hero">
+      <div class="wallet-balance-label">Your Balance</div>
+      <div class="wallet-balance">${balance.toLocaleString()}</div>
+      <div class="wallet-currency">MetaDollars</div>
+      <button class="btn btn-primary" style="padding:14px 40px"
+        onclick="openDebitModal(${balance})"${balance <= 0 ? ' disabled' : ''}>
+        Use MetaDollars
+      </button>
+    </div>
+    <div class="wallet-history-title">History</div>
+    <div class="txn-list">${txnRows}</div>`;
+}
+
+// ── Debit flow ──
+function openDebitModal(balance) {
+  selectedDebitAmount = null;
+  document.getElementById('debit-balance-display').textContent =
+    `Balance: ${Math.floor(balance).toLocaleString()} MetaDollars`;
+  document.getElementById('debit-custom-amount').value = '';
+  document.getElementById('debit-description').value   = '';
+  document.querySelectorAll('.debit-amt-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('debit-modal').hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDebitModal(e) {
+  if (e.target === document.getElementById('debit-modal')) {
+    document.getElementById('debit-modal').hidden = true;
+    document.body.style.overflow = '';
+  }
+}
+
+function selectDebitAmount(n) {
+  selectedDebitAmount = n;
+  document.querySelectorAll('.debit-amt-btn').forEach(b =>
+    b.classList.toggle('selected', parseInt(b.textContent) === n));
+  document.getElementById('debit-custom-amount').value = '';
+}
+
+function onDebitCustomInput() {
+  const val = parseInt(document.getElementById('debit-custom-amount').value);
+  if (val > 0) {
+    selectedDebitAmount = val;
+    document.querySelectorAll('.debit-amt-btn').forEach(b => b.classList.remove('selected'));
+  }
+}
+
+async function confirmDebit() {
+  if (!selectedDebitAmount || selectedDebitAmount <= 0) {
+    toast('Select or enter an amount first', 'error'); return;
+  }
+  const btn  = document.getElementById('debit-confirm-btn');
+  const desc = document.getElementById('debit-description').value || 'Purchase';
+  btn.disabled = true; btn.textContent = 'Processing…';
+  try {
+    const result = await api('POST', '/api/wallet/debit', { amount: selectedDebitAmount, description: desc });
+    document.getElementById('debit-modal').hidden = true;
+    document.body.style.overflow = '';
+    toast(`${selectedDebitAmount} MetaDollars used ✓`);
+    renderWallet({ balance: result.balance, transactions: [] });
+    // Refresh full wallet (gets updated history)
+    const fresh = await api('GET', '/api/wallet');
+    renderWallet(fresh);
+  } catch (err) {
+    toast(err.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Confirm Debit';
+  }
+}
+
+// ── Admin: adjust wallet ──
+async function openWalletAdjustModal(userId, name) {
+  walletAdjustTargetId = userId;
+  document.getElementById('wallet-adjust-name').textContent = name;
+  document.getElementById('wallet-adjust-amount').value     = '';
+  document.getElementById('wallet-adjust-desc').value       = '';
+  document.getElementById('wallet-adjust-balance-display').textContent = 'Loading…';
+  document.getElementById('wallet-adjust-modal').hidden = false;
+  document.body.style.overflow = 'hidden';
+  try {
+    const u = await api('GET', `/api/users/${userId}`);
+    document.getElementById('wallet-adjust-balance-display').textContent =
+      `Current balance: ${Math.floor(u.meta_dollars || 0).toLocaleString()} MetaDollars`;
+  } catch { document.getElementById('wallet-adjust-balance-display').textContent = ''; }
+}
+
+function closeWalletAdjustModal(e) {
+  if (e.target === document.getElementById('wallet-adjust-modal')) {
+    document.getElementById('wallet-adjust-modal').hidden = true;
+    document.body.style.overflow = '';
+  }
+}
+
+async function saveWalletAdjust() {
+  const amount = parseFloat(document.getElementById('wallet-adjust-amount').value);
+  const desc   = document.getElementById('wallet-adjust-desc').value || 'Admin adjustment';
+  if (!amount || amount === 0) { toast('Enter a non-zero amount', 'error'); return; }
+  try {
+    const result = await api('PUT', `/api/admin/users/${walletAdjustTargetId}/wallet`, { amount, description: desc });
+    document.getElementById('wallet-adjust-modal').hidden = true;
+    document.body.style.overflow = '';
+    const verb = amount > 0 ? 'Added' : 'Deducted';
+    toast(`${verb} ${Math.abs(amount)} MD — new balance: ${Math.floor(result.balance).toLocaleString()}`);
+    showProfile(walletAdjustTargetId);
   } catch (err) { toast(err.message, 'error'); }
 }
 

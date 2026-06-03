@@ -1312,6 +1312,273 @@ body {
   letter-spacing: 0.02em;
 }
 
+/* ── Wallet view ── */
+.wallet-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 52px 24px 40px;
+  gap: 6px;
+}
+
+.wallet-balance-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.wallet-balance {
+  font-size: 76px;
+  font-weight: 900;
+  color: var(--white);
+  line-height: 1;
+  letter-spacing: -3px;
+}
+
+.wallet-currency {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #FFD700;
+  margin-bottom: 20px;
+}
+
+.wallet-history-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 16px 12px 10px;
+  border-top: 1px solid var(--border);
+}
+
+.txn-list {
+  padding: 0 12px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.txn-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.txn-info { flex: 1; min-width: 0; }
+
+.txn-desc {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--white2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.txn-meta {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.txn-amount {
+  font-size: 17px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.txn-credit { color: var(--win); }
+.txn-debit  { color: var(--loss); }
+
+/* Debit amount chips */
+.debit-amounts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.debit-amt-btn {
+  padding: 12px 6px;
+  background: var(--card2);
+  border: 1.5px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--white2);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.12s;
+}
+
+.debit-amt-btn.selected {
+  background: rgba(255,215,0,0.1);
+  border-color: #FFD700;
+  color: #FFD700;
+}
+
+/* Admin wallet balance display in modal */
+.wallet-adjust-balance {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  margin-top: -12px;
+}
+
+/* Wallet balance on profile (admin/own view) */
+.wallet-profile-balance {
+  font-size: 38px;
+  font-weight: 900;
+  color: #FFD700;
+  line-height: 1;
+  text-align: center;
+  margin: 8px 0 2px;
+}
+
+.wallet-profile-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ── Unique code badge (profile) ── */
+.avatar-container {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.unique-code-badge {
+  margin-top: 7px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.28em;
+  color: #FFD700;
+  background: rgba(0,0,0,0.55);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,215,0,0.3);
+  animation: code-blink 2s ease-in-out infinite;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+@keyframes code-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.2; }
+}
+
+/* ── Approval popup ── */
+.approval-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.88);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.approval-card {
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 36px 28px 28px;
+  max-width: 310px;
+  width: 90%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  animation: approval-pop 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+
+@keyframes approval-pop {
+  from { opacity: 0; transform: scale(0.65); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.approval-check {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: rgba(34,197,94,0.12);
+  border: 2px solid var(--win);
+  color: var(--win);
+  font-size: 30px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.approval-title {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  color: var(--white);
+}
+
+.approval-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--white2);
+}
+
+.approval-tagline {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.approval-bar-wrap {
+  width: 100%;
+  height: 3px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 14px;
+}
+
+.approval-bar {
+  height: 100%;
+  background: var(--win);
+  border-radius: 3px;
+  width: 100%;
+  animation: approval-drain 4s linear forwards;
+}
+
+@keyframes approval-drain {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+
+.approval-hint {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
 /* ── Responsive ── */
 @media (min-width: 540px) {
   .roster-grid { grid-template-columns: repeat(3, 1fr); padding: 12px 16px 16px; }

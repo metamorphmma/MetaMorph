@@ -5,6 +5,8 @@ from datetime import timedelta
 from functools import wraps
 from flask import Flask, request, jsonify, session, send_from_directory, g
 import bcrypt
+import random
+import string
 import cloudinary
 import cloudinary.uploader
 
@@ -64,6 +66,8 @@ def init_db():
                 bjj_active     INTEGER DEFAULT 1,
                 mt_active      INTEGER DEFAULT 1,
                 boxing_active  INTEGER DEFAULT 1,
+                meta_dollars   REAL    DEFAULT 0,
+                unique_code    TEXT,
                 created_at     DATETIME DEFAULT CURRENT_TIMESTAMP
             );
             CREATE TABLE IF NOT EXISTS bjj_progress (
@@ -119,6 +123,16 @@ def init_db():
                 FOREIGN KEY (uploader_id) REFERENCES users(id),
                 FOREIGN KEY (subject_id)  REFERENCES users(id)
             );
+            CREATE TABLE IF NOT EXISTS meta_transactions (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id     INTEGER NOT NULL,
+                amount      REAL    NOT NULL,
+                description TEXT,
+                created_by  INTEGER NOT NULL,
+                created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id)    REFERENCES users(id),
+                FOREIGN KEY (created_by) REFERENCES users(id)
+            );
         ''')
 
 init_db()
@@ -130,6 +144,8 @@ def add_new_columns():
             'ALTER TABLE users ADD COLUMN bjj_active    INTEGER DEFAULT 1',
             'ALTER TABLE users ADD COLUMN mt_active     INTEGER DEFAULT 1',
             'ALTER TABLE users ADD COLUMN boxing_active INTEGER DEFAULT 1',
+            'ALTER TABLE users ADD COLUMN meta_dollars  REAL    DEFAULT 0',
+            'ALTER TABLE users ADD COLUMN unique_code   TEXT',
         ):
             try:
                 db.execute(stmt)
@@ -150,12 +166,32 @@ def seed_boxing_for_existing():
 
 seed_boxing_for_existing()
 
+def generate_unique_code(db):
+    """Return a random 4-uppercase-letter code that is not already in the users table."""
+    while True:
+        code = ''.join(random.choices(string.ascii_uppercase, k=4))
+        if not db.execute('SELECT id FROM users WHERE unique_code=?', (code,)).fetchone():
+            return code
+
+def seed_unique_codes():
+    """Assign unique codes to any existing users who don't have one yet."""
+    with sqlite3.connect(DB_PATH) as db:
+        rows = db.execute('SELECT id FROM users WHERE unique_code IS NULL').fetchall()
+        for row in rows:
+            code = generate_unique_code(db)
+            db.execute('UPDATE users SET unique_code=? WHERE id=?', (code, row[0]))
+        db.commit()
+
+seed_unique_codes()
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def get_profile(user_id):
     db = get_db()
     row = db.execute(
-        'SELECT id, name, role, status, profile_pic, height_cm, weight_kg, bjj_active, mt_active, boxing_active, created_at FROM users WHERE id = ?',
+        'SELECT id, name, role, status, profile_pic, height_cm, weight_kg, '
+        'bjj_active, mt_active, boxing_active, meta_dollars, unique_code, created_at '
+        'FROM users WHERE id = ?',
         (user_id,)
     ).fetchone()
     if not row:
@@ -259,8 +295,10 @@ def register():
         'INSERT INTO users (name, password_hash, role, status) VALUES (?,?,?,?)',
         (name, pw_hash, role, status)
     )
+    uid  = cur.lastrowid
+    code = generate_unique_code(db)
+    db.execute('UPDATE users SET unique_code=? WHERE id=?', (code, uid))
     db.commit()
-    uid = cur.lastrowid
 
     if role == 'student':
         seed_progress(db, uid)
@@ -551,6 +589,84 @@ def update_disciplines(uid):
                (bjj_active, mt_active, boxing_active, uid))
     db.commit()
     return jsonify(get_profile(uid))
+
+# ── Wallet (MetaDollars) ─────────────────────────────────────────────────────
+
+@app.route('/api/wallet', methods=['GET'])
+@require_auth
+def get_wallet():
+    uid = session['user_id']
+    db  = get_db()
+    row = db.execute('SELECT meta_dollars FROM users WHERE id=?', (uid,)).fetchone()
+    if not row:
+        return jsonify({'error': 'Not found'}), 404
+    txns = db.execute('''
+        SELECT t.id, t.amount, t.description, t.created_at, u.name AS actor_name
+        FROM meta_transactions t
+        JOIN users u ON u.id = t.created_by
+        WHERE t.user_id = ?
+        ORDER BY t.created_at DESC
+        LIMIT 30
+    ''', (uid,)).fetchall()
+    return jsonify({'balance': row['meta_dollars'] or 0, 'transactions': [dict(r) for r in txns]})
+
+@app.route('/api/wallet/debit', methods=['POST'])
+@require_auth
+def debit_wallet():
+    uid    = session['user_id']
+    d      = request.get_json() or {}
+    amount = float(d.get('amount', 0) or 0)
+    desc   = (d.get('description') or 'Purchase').strip()[:200]
+    if amount <= 0:
+        return jsonify({'error': 'Amount must be positive'}), 400
+    db      = get_db()
+    row     = db.execute('SELECT meta_dollars FROM users WHERE id=?', (uid,)).fetchone()
+    balance = row['meta_dollars'] or 0
+    if balance < amount:
+        return jsonify({'error': f'Not enough MetaDollars (you have {int(balance)})'}), 400
+    new_bal = max(0.0, balance - amount)
+    db.execute('UPDATE users SET meta_dollars=? WHERE id=?', (new_bal, uid))
+    db.execute(
+        'INSERT INTO meta_transactions (user_id, amount, description, created_by) VALUES (?,?,?,?)',
+        (uid, -amount, desc, uid)
+    )
+    db.commit()
+    return jsonify({'balance': new_bal, 'debited': amount})
+
+@app.route('/api/admin/wallet/activity', methods=['GET'])
+@require_admin
+def wallet_activity():
+    rows = get_db().execute('''
+        SELECT t.id, t.amount, t.description, t.created_at,
+               u.name AS student_name, a.name AS actor_name
+        FROM meta_transactions t
+        JOIN users u ON u.id = t.user_id
+        JOIN users a ON a.id = t.created_by
+        ORDER BY t.created_at DESC
+        LIMIT 50
+    ''').fetchall()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/admin/users/<int:uid>/wallet', methods=['PUT'])
+@require_admin
+def admin_adjust_wallet(uid):
+    d      = request.get_json() or {}
+    amount = float(d.get('amount', 0) or 0)
+    desc   = (d.get('description') or 'Admin adjustment').strip()[:200]
+    if amount == 0:
+        return jsonify({'error': 'Amount cannot be zero'}), 400
+    db      = get_db()
+    row     = db.execute('SELECT meta_dollars FROM users WHERE id=?', (uid,)).fetchone()
+    if not row:
+        return jsonify({'error': 'User not found'}), 404
+    new_bal = max(0.0, (row['meta_dollars'] or 0) + amount)
+    db.execute('UPDATE users SET meta_dollars=? WHERE id=?', (new_bal, uid))
+    db.execute(
+        'INSERT INTO meta_transactions (user_id, amount, description, created_by) VALUES (?,?,?,?)',
+        (uid, amount, desc, session['user_id'])
+    )
+    db.commit()
+    return jsonify({'balance': new_bal})
 
 # ── Weapons ───────────────────────────────────────────────────────────────────
 
