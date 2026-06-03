@@ -661,7 +661,7 @@ async function loadWalletActivity() {
     el.innerHTML = '<div class="txn-list">' + txns.map(t => {
       const sign  = t.amount > 0 ? '+' : '−';
       const cls   = t.amount > 0 ? 'txn-credit' : 'txn-debit';
-      const date  = new Date(t.created_at + 'Z').toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
+      const date  = fmtDateTime(t.created_at);
       return `<div class="txn-item">
         <div class="txn-info">
           <div class="txn-desc"><strong>${esc(t.student_name)}</strong> — ${esc(t.description || 'Transaction')}</div>
@@ -912,6 +912,13 @@ async function showWallet() {
 
 const fmtMD = n => '$' + (n || 0).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
+const fmtDateTime = str => {
+  const dt = new Date(str + 'Z');
+  const d  = dt.toLocaleDateString('en-GB',  { day: '2-digit', month: 'short' });
+  const t  = dt.toLocaleTimeString('en-US',  { hour: 'numeric', minute: '2-digit', hour12: true });
+  return `${d} · ${t}`;
+};
+
 function renderWallet(data) {
   const balance = data.balance || 0;
   const txns    = data.transactions || [];
@@ -920,7 +927,7 @@ function renderWallet(data) {
     ? txns.map(t => {
         const sign  = t.amount > 0 ? '+' : '−';
         const cls   = t.amount > 0 ? 'txn-credit' : 'txn-debit';
-        const date  = new Date(t.created_at + 'Z').toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
+        const date  = fmtDateTime(t.created_at);
         return `<div class="txn-item">
           <div class="txn-info">
             <div class="txn-desc">${esc(t.description || 'Transaction')}</div>
@@ -940,9 +947,23 @@ function renderWallet(data) {
         onclick="openDebitModal(${balance})"${balance <= 0 ? ' disabled' : ''}>
         Use MetaDollars
       </button>
+      <button class="readme-bubble" onclick="openReadMePopup()">💬 READ ME</button>
     </div>
     <div class="wallet-history-title">History</div>
     <div class="txn-list">${txnRows}</div>`;
+}
+
+// ── READ ME popup ──
+function openReadMePopup() {
+  document.getElementById('readme-popup').hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+
+function closeReadMePopup(e) {
+  if (e.target === document.getElementById('readme-popup')) {
+    document.getElementById('readme-popup').hidden = true;
+    document.body.style.overflow = '';
+  }
 }
 
 // ── Debit flow ──

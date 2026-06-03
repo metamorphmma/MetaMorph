@@ -1431,6 +1431,71 @@ body {
   text-align: center;
 }
 
+/* ── Wallet READ ME bubble & popup ── */
+.readme-bubble {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 16px;
+  background: rgba(255,215,0,0.10);
+  border: 1px solid rgba(255,215,0,0.35);
+  border-radius: 20px;
+  color: #FFD700;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  margin-top: 14px;
+  animation: readme-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes readme-glow {
+  0%, 100% { box-shadow: 0 0 0 0   rgba(255,215,0,0.25); }
+  50%       { box-shadow: 0 0 0 7px rgba(255,215,0,0); }
+}
+
+.readme-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 20px;
+}
+
+.readme-card {
+  background: var(--card);
+  border: 1px solid rgba(255,215,0,0.25);
+  border-radius: 18px;
+  padding: 28px 22px 24px;
+  max-width: 320px;
+  width: 100%;
+  animation: readme-pop 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+
+@keyframes readme-pop {
+  from { opacity: 0; transform: scale(0.82); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.readme-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #FFD700;
+  margin-bottom: 14px;
+}
+
+.readme-message {
+  font-size: 15px;
+  color: var(--white2);
+  line-height: 1.65;
+  font-weight: 500;
+}
+
 /* ── Unique code badge — top-right of profile hero ── */
 .unique-code-badge {
   position: absolute;
