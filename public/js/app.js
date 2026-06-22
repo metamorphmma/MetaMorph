@@ -231,7 +231,7 @@ async function showRoster() {
   showView('roster', false);
   if (me?.role === 'admin') refreshPendingBadge();
   const grid = document.getElementById('roster-grid');
-  grid.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  grid.innerHTML = Array(6).fill('<div class="student-card skeleton-card"></div>').join('');
   try {
     const users = await api('GET', '/api/users');
     if (!users.length) {
@@ -269,7 +269,7 @@ function renderRosterCard(u) {
   // Build scrollable photo strip: profile pic first, then action photos
   const mediaSlides = [];
   if (u.profile_pic) {
-    mediaSlides.push(`<div class="card-slide"><img src="${u.profile_pic}" alt="${esc(u.name)}"></div>`);
+    mediaSlides.push(`<div class="card-slide"><img src="${u.profile_pic}" alt="${esc(u.name)}" loading="lazy"></div>`);
   } else {
     mediaSlides.push(`<div class="card-slide" style="background:${avatarColor(u)};color:#fff;display:flex;align-items:center;justify-content:center"><span style="font-size:32px;font-weight:700">${initials(u.name)}</span></div>`);
   }
@@ -283,7 +283,7 @@ function renderRosterCard(u) {
     : '';
   const photoArea = mediaSlides.length > 1
     ? `<div class="card-photo-strip">${mediaSlides.join('')}</div>${swipeHint}`
-    : `<div class="card-photo" style="${u.profile_pic ? 'background:none' : `background:${avatarColor(u)};color:#fff`}">${u.profile_pic ? `<img src="${u.profile_pic}" alt="${esc(u.name)}">` : `<span>${initials(u.name)}</span>`}</div>`;
+    : `<div class="card-photo" style="${u.profile_pic ? 'background:none' : `background:${avatarColor(u)};color:#fff`}">${u.profile_pic ? `<img src="${u.profile_pic}" alt="${esc(u.name)}" loading="lazy">` : `<span>${initials(u.name)}</span>`}</div>`;
 
   // Row order: Muay Thai → Boxing → Jiu-Jitsu (no inline sig weapon)
   const mtBadge = mtActive

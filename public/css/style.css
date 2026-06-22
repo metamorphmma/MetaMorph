@@ -342,6 +342,17 @@ body {
 
 .student-card:active { transform: scale(0.95); }
 
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skeleton-card {
+  background: linear-gradient(90deg, #202020 25%, #2c2c2c 50%, #202020 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
 /* Scrollable photo strip — multiple photos swipeable left/right */
 .card-photo-strip {
   position: absolute;
