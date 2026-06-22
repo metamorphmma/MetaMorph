@@ -1,7 +1,7 @@
 import os
 import sqlite3
 import secrets
-from datetime import timedelta
+from datetime import timedelta, datetime
 from functools import wraps
 from flask import Flask, request, jsonify, session, send_from_directory, g
 import bcrypt
@@ -133,6 +133,20 @@ def init_db():
                 FOREIGN KEY (user_id)    REFERENCES users(id),
                 FOREIGN KEY (created_by) REFERENCES users(id)
             );
+            CREATE TABLE IF NOT EXISTS pause_requests (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id     INTEGER NOT NULL,
+                start_date  TEXT    NOT NULL,
+                weeks       INTEGER NOT NULL,
+                end_date    TEXT    NOT NULL,
+                reason      TEXT,
+                status      TEXT    DEFAULT 'sent for approval',
+                created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+                reviewed_at DATETIME,
+                reviewed_by INTEGER,
+                FOREIGN KEY (user_id)    REFERENCES users(id),
+                FOREIGN KEY (reviewed_by) REFERENCES users(id)
+            );
         ''')
 
 init_db()
@@ -146,6 +160,7 @@ def add_new_columns():
             'ALTER TABLE users ADD COLUMN boxing_active INTEGER DEFAULT 1',
             'ALTER TABLE users ADD COLUMN meta_dollars  REAL    DEFAULT 0',
             'ALTER TABLE users ADD COLUMN unique_code   TEXT',
+            'ALTER TABLE pause_requests ADD COLUMN reason TEXT',
         ):
             try:
                 db.execute(stmt)
@@ -702,6 +717,86 @@ def admin_adjust_wallet(uid):
     )
     db.commit()
     return jsonify({'balance': new_bal})
+
+# ── Pause requests ────────────────────────────────────────────────────────────
+
+@app.route('/api/pause', methods=['GET'])
+@require_auth
+def get_my_pauses():
+    uid  = session['user_id']
+    db   = get_db()
+    rows = db.execute('''
+        SELECT id, start_date, weeks, end_date, reason, status, created_at
+        FROM pause_requests WHERE user_id = ?
+        ORDER BY created_at DESC
+    ''', (uid,)).fetchall()
+    total_approved = sum(r['weeks'] for r in rows if r['status'] == 'approved')
+    return jsonify({'requests': [dict(r) for r in rows], 'total_approved_weeks': total_approved})
+
+@app.route('/api/pause', methods=['POST'])
+@require_auth
+def create_pause():
+    uid        = session['user_id']
+    d          = request.get_json() or {}
+    start_date = (d.get('start_date') or '').strip()
+    weeks      = int(d.get('weeks', 0) or 0)
+    reason     = (d.get('reason') or '').strip() or None
+    if not start_date or weeks < 1 or weeks > 8:
+        return jsonify({'error': 'Invalid start date or number of weeks'}), 400
+    try:
+        start = datetime.strptime(start_date, '%Y-%m-%d')
+    except ValueError:
+        return jsonify({'error': 'Invalid date format'}), 400
+    end_date = (start + timedelta(days=weeks * 7 - 1)).strftime('%Y-%m-%d')
+    db = get_db()
+    db.execute(
+        'INSERT INTO pause_requests (user_id, start_date, weeks, end_date, reason) VALUES (?,?,?,?,?)',
+        (uid, start_date, weeks, end_date, reason)
+    )
+    db.commit()
+    return jsonify({'ok': True, 'end_date': end_date})
+
+@app.route('/api/admin/pause', methods=['GET'])
+@require_admin
+def admin_list_pauses():
+    rows = get_db().execute('''
+        SELECT p.id, p.start_date, p.weeks, p.end_date, p.reason, p.status, p.created_at,
+               u.name AS student_name, u.id AS student_id
+        FROM pause_requests p
+        JOIN users u ON u.id = p.user_id
+        ORDER BY (p.status = 'sent for approval') DESC, p.created_at DESC
+    ''').fetchall()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/admin/pause/<int:pid>/approve', methods=['POST'])
+@require_admin
+def approve_pause(pid):
+    db = get_db()
+    db.execute(
+        "UPDATE pause_requests SET status='approved', reviewed_at=CURRENT_TIMESTAMP, reviewed_by=? WHERE id=?",
+        (session['user_id'], pid)
+    )
+    db.commit()
+    return jsonify({'ok': True})
+
+@app.route('/api/admin/pause/<int:pid>/reject', methods=['POST'])
+@require_admin
+def reject_pause(pid):
+    db = get_db()
+    db.execute(
+        "UPDATE pause_requests SET status='rejected', reviewed_at=CURRENT_TIMESTAMP, reviewed_by=? WHERE id=?",
+        (session['user_id'], pid)
+    )
+    db.commit()
+    return jsonify({'ok': True})
+
+@app.route('/api/admin/users/<int:uid>/pause', methods=['DELETE'])
+@require_admin
+def delete_user_pauses(uid):
+    db = get_db()
+    db.execute('DELETE FROM pause_requests WHERE user_id=?', (uid,))
+    db.commit()
+    return jsonify({'ok': True})
 
 # ── Weapons ───────────────────────────────────────────────────────────────────
 

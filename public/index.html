@@ -89,6 +89,21 @@
       <div id="wallet-content"></div>
     </div>
 
+    <!-- PAUSE VIEW (student) -->
+    <div id="pause-view" class="view">
+      <div class="pause-view-header">
+        <div class="view-title" style="padding:0">Pause</div>
+        <button class="pause-info-btn" onclick="openPauseInfo()"><em>i</em></button>
+      </div>
+      <div id="pause-content"></div>
+    </div>
+
+    <!-- ADMIN PAUSE VIEW -->
+    <div id="admin-pause-view" class="view">
+      <div class="view-title">Pause Requests</div>
+      <div id="admin-pause-content"></div>
+    </div>
+
     <!-- PROFILE VIEW -->
     <div id="profile-view" class="view">
       <div id="profile-content"></div>
@@ -262,9 +277,21 @@
     </button>
 
     <!-- Student only -->
+    <button class="nav-btn" id="nav-pause" hidden onclick="showPause()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+      <span>Pause</span>
+    </button>
+
+    <!-- Student only -->
     <button class="nav-btn" id="nav-profile" onclick="showMyProfile()">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       <span>My Profile</span>
+    </button>
+
+    <!-- Admin only -->
+    <button class="nav-btn" id="nav-admin-pause" hidden onclick="showAdminPause()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+      <span>Pause</span>
     </button>
 
     <!-- Admin only -->
@@ -498,6 +525,29 @@
     <div class="readme-card" onclick="event.stopPropagation()">
       <div class="readme-title">💬 Hey, listen!</div>
       <div class="readme-message">Refer your friend for our $10 for 3 new customer promo, and get $5! Check your profile page for your unique referral code&nbsp;;)</div>
+    </div>
+  </div>
+
+  <!-- Pause info popup -->
+  <div id="pause-info-popup" class="readme-overlay" hidden onclick="closePauseInfo(event)">
+    <div class="pause-info-card" onclick="event.stopPropagation()">
+      <div class="pause-info-title"><em>i</em>&nbsp; Voluntary Pauses</div>
+      <div class="pause-info-row">
+        <span class="pause-info-plan">12 months membership</span>
+        <span class="pause-info-weeks">Up to 8 weeks</span>
+      </div>
+      <div class="pause-info-row">
+        <span class="pause-info-plan">6 months membership</span>
+        <span class="pause-info-weeks">Up to 4 weeks</span>
+      </div>
+      <div class="pause-info-row">
+        <span class="pause-info-plan">3 months membership</span>
+        <span class="pause-info-weeks">Up to 2 weeks</span>
+      </div>
+      <div class="pause-info-row">
+        <span class="pause-info-plan">1 month membership</span>
+        <span class="pause-info-weeks">No pause allowed</span>
+      </div>
     </div>
   </div>
 

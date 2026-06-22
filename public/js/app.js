@@ -68,9 +68,11 @@ function showApp() {
   renderHeaderAvatar();
 
   const isAdmin = me && me.role === 'admin';
-  document.getElementById('nav-profile').hidden  = isAdmin;
-  document.getElementById('nav-wallet').hidden   = isAdmin;
-  document.getElementById('nav-pending').hidden  = !isAdmin;
+  document.getElementById('nav-profile').hidden     = isAdmin;
+  document.getElementById('nav-wallet').hidden      = isAdmin;
+  document.getElementById('nav-pause').hidden       = isAdmin;
+  document.getElementById('nav-pending').hidden     = !isAdmin;
+  document.getElementById('nav-admin-pause').hidden = !isAdmin;
 
   if (isAdmin) refreshPendingBadge();
 }
@@ -104,9 +106,11 @@ function showView(name, trackPrev = true) {
   backBtn.hidden = !(name === 'profile' || name === 'edit');
 
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  if (name === 'roster')  document.getElementById('nav-home')?.classList.add('active');
-  if (name === 'wallet')  document.getElementById('nav-wallet')?.classList.add('active');
-  if (name === 'admin')   document.getElementById('nav-pending')?.classList.add('active');
+  if (name === 'roster')      document.getElementById('nav-home')?.classList.add('active');
+  if (name === 'wallet')      document.getElementById('nav-wallet')?.classList.add('active');
+  if (name === 'pause')       document.getElementById('nav-pause')?.classList.add('active');
+  if (name === 'admin')       document.getElementById('nav-pending')?.classList.add('active');
+  if (name === 'admin-pause') document.getElementById('nav-admin-pause')?.classList.add('active');
   if (name === 'profile' && viewingId === me?.id) document.getElementById('nav-profile')?.classList.add('active');
 }
 
@@ -1040,6 +1044,210 @@ async function saveWalletAdjust() {
     const verb = amount > 0 ? 'Added' : 'Deducted';
     toast(`${verb} ${fmtMD(Math.abs(amount))} — new balance: ${fmtMD(result.balance)}`);
     showProfile(walletAdjustTargetId);
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+/* ── Pause ── */
+const STATUS_LABEL = { 'sent for approval': 'Pending', 'approved': 'Approved', 'rejected': 'Rejected' };
+const STATUS_CLS   = { 'sent for approval': 'pause-status-pending', 'approved': 'pause-status-approved', 'rejected': 'pause-status-rejected' };
+const STATUS_ICON  = { 'sent for approval': '⏳', 'approved': '✓', 'rejected': '✕' };
+
+function formatPauseDate(str) {
+  if (!str) return '—';
+  const d = new Date(str + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+async function showPause() {
+  showView('pause', false);
+  document.getElementById('pause-content').innerHTML =
+    '<div class="loading"><div class="spinner"></div></div>';
+  try {
+    const data = await api('GET', '/api/pause');
+    renderPause(data);
+  } catch {
+    document.getElementById('pause-content').innerHTML =
+      '<div class="empty-state"><p>Could not load pause requests.</p></div>';
+  }
+}
+
+function renderPause(data) {
+  const requests   = data.requests || [];
+  const totalWeeks = data.total_approved_weeks || 0;
+  const today      = new Date().toISOString().slice(0, 10);
+
+  const formHtml = `
+    <div class="pause-form-card">
+      <div class="pause-form-title">Request a Pause</div>
+      <div class="field">
+        <label>Pause Start Date</label>
+        <input type="date" id="pause-start-date" min="${today}" oninput="updatePauseEndDate()">
+      </div>
+      <div class="field">
+        <label>Duration</label>
+        <select id="pause-weeks-select" onchange="updatePauseEndDate()">
+          <option value="">Select duration</option>
+          ${[1,2,3,4,5,6,7,8].map(w => `<option value="${w}">${w} week${w > 1 ? 's' : ''}</option>`).join('')}
+        </select>
+      </div>
+      <div class="pause-end-date-display" id="pause-end-date-display" hidden>
+        <span class="pause-end-label">Last day of pause</span>
+        <span class="pause-end-value" id="pause-end-value"></span>
+      </div>
+      <div class="field">
+        <label>Reason</label>
+        <input type="text" id="pause-reason-input" placeholder="e.g. Medical, Travel, Holiday">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="submitPauseRequest()">Send to Admin</button>
+    </div>`;
+
+  const rowsHtml = requests.length
+    ? requests.map(r => `
+        <div class="pause-request-card">
+          <div class="pause-request-dates">
+            <span class="pause-date">${formatPauseDate(r.start_date)}</span>
+            <span class="pause-date-arrow">→</span>
+            <span class="pause-date">${formatPauseDate(r.end_date)}</span>
+          </div>
+          <div class="pause-request-meta">${r.weeks} week${r.weeks > 1 ? 's' : ''} · Submitted ${fmtDateTime(r.created_at)}</div>
+          ${r.reason ? `<div class="pause-reason">${esc(r.reason)}</div>` : ''}
+          <div class="pause-status ${STATUS_CLS[r.status]}">${STATUS_ICON[r.status]} ${STATUS_LABEL[r.status]}</div>
+        </div>`).join('')
+    : '<div class="empty-state" style="padding:20px 0"><p>No pause requests yet.</p></div>';
+
+  document.getElementById('pause-content').innerHTML =
+    formHtml +
+    '<div class="pause-section-title">My Pause History</div>' +
+    '<div class="pause-list">' + rowsHtml + '</div>' +
+    `<div class="pause-total-card">
+       <span class="pause-total-label">Total Approved Pause</span>
+       <span class="pause-total-value">${totalWeeks} week${totalWeeks !== 1 ? 's' : ''}</span>
+     </div>`;
+}
+
+function updatePauseEndDate() {
+  const startVal = document.getElementById('pause-start-date').value;
+  const weeksVal = parseInt(document.getElementById('pause-weeks-select').value);
+  const display  = document.getElementById('pause-end-date-display');
+  if (startVal && weeksVal >= 1) {
+    const [y, m, d] = startVal.split('-').map(Number);
+    const end = new Date(y, m - 1, d + weeksVal * 7 - 1);
+    const endStr = [
+      end.getFullYear(),
+      String(end.getMonth() + 1).padStart(2, '0'),
+      String(end.getDate()).padStart(2, '0')
+    ].join('-');
+    document.getElementById('pause-end-value').textContent = formatPauseDate(endStr);
+    display.hidden = false;
+  } else {
+    display.hidden = true;
+  }
+}
+
+async function submitPauseRequest() {
+  const start_date = document.getElementById('pause-start-date').value;
+  const weeks      = parseInt(document.getElementById('pause-weeks-select').value);
+  const reason     = document.getElementById('pause-reason-input').value.trim();
+  if (!start_date)       { toast('Select a start date', 'error'); return; }
+  if (!weeks || weeks < 1) { toast('Select a duration', 'error'); return; }
+  try {
+    await api('POST', '/api/pause', { start_date, weeks, reason });
+    toast('Pause request sent to admin!');
+    const data = await api('GET', '/api/pause');
+    renderPause(data);
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+function openPauseInfo() {
+  document.getElementById('pause-info-popup').hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+
+function closePauseInfo(e) {
+  if (e.target === document.getElementById('pause-info-popup')) {
+    document.getElementById('pause-info-popup').hidden = true;
+    document.body.style.overflow = '';
+  }
+}
+
+/* ── Admin: pause requests ── */
+async function showAdminPause() {
+  showView('admin-pause', false);
+  document.getElementById('admin-pause-content').innerHTML =
+    '<div class="loading"><div class="spinner"></div></div>';
+  try {
+    const requests = await api('GET', '/api/admin/pause');
+    renderAdminPause(requests);
+  } catch {
+    document.getElementById('admin-pause-content').innerHTML =
+      '<div class="empty-state"><p>Could not load.</p></div>';
+  }
+}
+
+function renderAdminPause(requests) {
+  const el = document.getElementById('admin-pause-content');
+  if (!requests.length) {
+    el.innerHTML = '<div class="empty-state"><p>No pause requests yet.</p></div>';
+    return;
+  }
+
+  // Group by student
+  const byStudent = {};
+  requests.forEach(r => {
+    if (!byStudent[r.student_id]) {
+      byStudent[r.student_id] = { name: r.student_name, id: r.student_id, requests: [] };
+    }
+    byStudent[r.student_id].requests.push(r);
+  });
+
+  const html = Object.values(byStudent).map(student => {
+    const reqs = student.requests.map(r => `
+      <div class="admin-pause-req" id="apc-${r.id}">
+        <div class="admin-pause-req-top">
+          <div class="pause-req-dates">
+            ${formatPauseDate(r.start_date)} → ${formatPauseDate(r.end_date)}
+          </div>
+          <div class="pause-status ${STATUS_CLS[r.status]}">${STATUS_ICON[r.status]} ${STATUS_LABEL[r.status]}</div>
+        </div>
+        <div class="pause-request-meta">${r.weeks} week${r.weeks > 1 ? 's' : ''} · ${fmtDateTime(r.created_at)}</div>
+        ${r.reason ? `<div class="pause-reason">${esc(r.reason)}</div>` : ''}
+        ${r.status === 'sent for approval' ? `
+          <div class="admin-pause-req-actions">
+            <button class="btn btn-ghost btn-sm" onclick="adminPauseAction(${r.id},'reject')">Reject</button>
+            <button class="btn btn-primary btn-sm" onclick="adminPauseAction(${r.id},'approve')">Approve</button>
+          </div>` : ''}
+      </div>`).join('');
+
+    return `
+      <div class="admin-pause-student-card">
+        <div class="admin-pause-student-header">
+          <div class="admin-pause-student-name">${esc(student.name)}</div>
+          <button class="btn btn-danger btn-sm"
+            onclick="adminDeleteStudentPauses(${student.id},'${esc(student.name)}')">Delete All</button>
+        </div>
+        ${reqs}
+      </div>`;
+  }).join('');
+
+  el.innerHTML = html;
+}
+
+async function adminPauseAction(pid, action) {
+  try {
+    await api('POST', `/api/admin/pause/${pid}/${action}`);
+    toast(`Pause request ${action === 'approve' ? 'approved' : 'rejected'}`);
+    const requests = await api('GET', '/api/admin/pause');
+    renderAdminPause(requests);
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function adminDeleteStudentPauses(uid, name) {
+  if (!confirm(`Delete ALL pause history for ${name}? This resets their record to a clean slate.`)) return;
+  try {
+    await api('DELETE', `/api/admin/users/${uid}/pause`);
+    toast(`Pause history cleared for ${name}`);
+    const requests = await api('GET', '/api/admin/pause');
+    renderAdminPause(requests);
   } catch (err) { toast(err.message, 'error'); }
 }
 
