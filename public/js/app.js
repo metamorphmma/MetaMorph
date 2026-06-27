@@ -1200,8 +1200,7 @@ function renderAdminPause(requests) {
     byStudent[r.student_id].requests.push(r);
   });
 
-  const html = Object.values(byStudent).map(student => {
-    const reqs = student.requests.map(r => `
+  const renderReq = r => `
       <div class="admin-pause-req" id="apc-${r.id}">
         <div class="admin-pause-req-top">
           <div class="pause-req-dates">
@@ -1216,7 +1215,22 @@ function renderAdminPause(requests) {
             <button class="btn btn-ghost btn-sm" onclick="adminPauseAction(${r.id},'reject')">Reject</button>
             <button class="btn btn-primary btn-sm" onclick="adminPauseAction(${r.id},'approve')">Approve</button>
           </div>` : ''}
-      </div>`).join('');
+      </div>`;
+
+  const html = Object.values(byStudent).map(student => {
+    const pending = student.requests.filter(r => r.status === 'sent for approval');
+    const resolved = student.requests.filter(r => r.status !== 'sent for approval');
+
+    const pendingHtml = pending.length
+      ? pending.map(renderReq).join('')
+      : '<div class="pause-request-meta" style="padding:8px 0">No outstanding requests.</div>';
+
+    const resolvedHtml = resolved.length
+      ? `<details class="admin-pause-history">
+           <summary>History (${resolved.length})</summary>
+           ${resolved.map(renderReq).join('')}
+         </details>`
+      : '';
 
     return `
       <div class="admin-pause-student-card">
@@ -1225,7 +1239,8 @@ function renderAdminPause(requests) {
           <button class="btn btn-danger btn-sm"
             onclick="adminDeleteStudentPauses(${student.id},'${esc(student.name)}')">Delete All</button>
         </div>
-        ${reqs}
+        ${pendingHtml}
+        ${resolvedHtml}
       </div>`;
   }).join('');
 

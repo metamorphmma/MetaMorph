@@ -1894,6 +1894,29 @@ body {
   margin-top: 4px;
 }
 
+.admin-pause-history {
+  border-top: 1px solid var(--border);
+}
+.admin-pause-history summary {
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.admin-pause-history summary::-webkit-details-marker { display: none; }
+.admin-pause-history summary::before {
+  content: '▸';
+  font-size: 10px;
+  transition: transform 0.15s ease;
+}
+.admin-pause-history[open] summary::before { transform: rotate(90deg); }
+.admin-pause-history .admin-pause-req { padding: 12px 16px; }
+
 /* ── Responsive ── */
 @media (min-width: 540px) {
   .roster-grid { grid-template-columns: repeat(3, 1fr); padding: 12px 16px 16px; }
