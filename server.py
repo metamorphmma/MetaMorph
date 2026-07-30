@@ -949,8 +949,12 @@ def approve_user(uid):
 @app.route('/api/admin/users/<int:uid>', methods=['DELETE'])
 @require_admin
 def delete_user(uid):
+    if uid == session.get('user_id'):
+        return jsonify({'error': 'Cannot delete your own account'}), 400
     db = get_db()
-    for tbl in ('bjj_progress', 'mt_progress', 'competition_records'):
+    for tbl in ('bjj_progress', 'mt_progress', 'boxing_progress',
+                'competition_records', 'weapon_assignments',
+                'student_media', 'meta_transactions', 'pause_requests'):
         db.execute(f'DELETE FROM {tbl} WHERE user_id=?', (uid,))
     db.execute('DELETE FROM users WHERE id=?', (uid,))
     db.commit()

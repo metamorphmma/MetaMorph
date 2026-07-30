@@ -468,6 +468,7 @@ function renderProfile(user) {
         ${canAssignWeapons ? `<button class="btn btn-ghost btn-full" onclick="openWeaponsModal(${user.id},'${esc(user.name)}',${user.mt_active?1:0},${user.boxing_active?1:0},${user.bjj_active?1:0})">⚔ Assign Weapons</button>` : ''}
         ${canAssign        ? `<button class="btn btn-primary btn-full" onclick="openAssignModal(${user.id},'${esc(user.name)}')">Assign Progress</button>` : ''}
         ${isAdmin          ? `<button class="btn btn-ghost btn-full" onclick="openAdminEditModal(${user.id},'${esc(user.name)}')">Edit Name / Password</button>` : ''}
+        ${isAdmin && me.id !== user.id ? `<button class="btn btn-danger btn-full" onclick="deleteUserAccount(${user.id},'${esc(user.name)}')">Delete Account</button>` : ''}
       </div>
     </div>`;
   loadMediaGallery(user.id);
@@ -899,6 +900,15 @@ async function saveAdminEdit() {
     document.body.style.overflow = '';
     toast('User updated!');
     showProfile(adminEditTargetId);
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function deleteUserAccount(uid, name) {
+  if (!confirm(`Permanently delete ${name}'s account? This cannot be undone.`)) return;
+  try {
+    await api('DELETE', `/api/admin/users/${uid}`);
+    toast(`${name}'s account deleted`);
+    showRoster();
   } catch (err) { toast(err.message, 'error'); }
 }
 
