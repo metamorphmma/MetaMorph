@@ -953,9 +953,10 @@ def delete_user(uid):
         return jsonify({'error': 'Cannot delete your own account'}), 400
     db = get_db()
     for tbl in ('bjj_progress', 'mt_progress', 'boxing_progress',
-                'competition_records', 'weapon_assignments',
-                'student_media', 'meta_transactions', 'pause_requests'):
+                'competition_records', 'meta_transactions', 'pause_requests'):
         db.execute(f'DELETE FROM {tbl} WHERE user_id=?', (uid,))
+    db.execute('DELETE FROM weapon_assignments WHERE from_user=? OR to_user=?', (uid, uid))
+    db.execute('DELETE FROM student_media WHERE uploader_id=? OR subject_id=?', (uid, uid))
     db.execute('DELETE FROM users WHERE id=?', (uid,))
     db.commit()
     return jsonify({'ok': True})
