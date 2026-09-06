@@ -1,6 +1,8 @@
 import os
 import sqlite3
 import secrets
+import gzip as gzip_module
+from io import BytesIO
 from datetime import timedelta, datetime
 from functools import wraps
 from flask import Flask, request, jsonify, session, send_from_directory, g
@@ -13,6 +15,29 @@ import cloudinary.uploader
 app = Flask(__name__, static_folder='public', static_url_path='')
 app.secret_key = os.environ.get('SESSION_SECRET', secrets.token_hex(32))
 app.permanent_session_lifetime = timedelta(days=7)
+
+@app.after_request
+def compress(response):
+    if 'gzip' not in request.headers.get('Accept-Encoding', ''):
+        return response
+    if response.status_code < 200 or response.status_code >= 300:
+        return response
+    if response.headers.get('Content-Encoding'):
+        return response
+    ct = response.content_type or ''
+    if not (ct.startswith('application/json') or ct.startswith('text/')):
+        return response
+    data = response.get_data()
+    if len(data) < 500:
+        return response
+    buf = BytesIO()
+    with gzip_module.GzipFile(mode='wb', fileobj=buf) as f:
+        f.write(data)
+    response.set_data(buf.getvalue())
+    response.headers['Content-Encoding'] = 'gzip'
+    response.headers['Content-Length'] = len(response.get_data())
+    response.headers.add('Vary', 'Accept-Encoding')
+    return response
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50 MB — supports short video uploads
 
 cloudinary.config(
@@ -401,38 +426,46 @@ def list_users():
     # Signature weapon per discipline: the single weapon with the highest
     # assignment count. Returns NULL when two weapons tie for the top.
     rows = get_db().execute('''
+        WITH
+        wa_cnt AS (
+            SELECT to_user, discipline, weapon, COUNT(*) AS cnt
+            FROM weapon_assignments GROUP BY to_user, discipline, weapon
+        ),
+        wa_max AS (
+            SELECT to_user, discipline, MAX(cnt) AS mc
+            FROM wa_cnt GROUP BY to_user, discipline
+        ),
+        wa_sig AS (
+            SELECT wc.to_user, wc.discipline,
+                   CASE WHEN COUNT(*) = 1 THEN MAX(wc.weapon) ELSE NULL END AS sig
+            FROM wa_cnt wc
+            JOIN wa_max wm ON wm.to_user=wc.to_user AND wm.discipline=wc.discipline
+                          AND wc.cnt=wm.mc
+            GROUP BY wc.to_user, wc.discipline
+        ),
+        media_agg AS (
+            SELECT subject_id, GROUP_CONCAT(media_url,'||') AS media_urls
+            FROM (SELECT subject_id, media_url,
+                         ROW_NUMBER() OVER (PARTITION BY subject_id ORDER BY uploaded_at DESC) rn
+                  FROM student_media)
+            WHERE rn <= 4 GROUP BY subject_id
+        )
         SELECT u.id, u.name, u.role, u.profile_pic,
                u.height_cm, u.weight_kg,
                u.bjj_active, u.mt_active, u.boxing_active,
                COALESCE(b.belt,'white') AS belt, COALESCE(b.stripes,0) AS stripes,
                COALESCE(m.level,1) AS mt_level,
                COALESCE(bx.level,1) AS boxing_level,
-               (SELECT GROUP_CONCAT(media_url,'||') FROM (
-                   SELECT media_url FROM student_media
-                   WHERE subject_id=u.id ORDER BY uploaded_at DESC LIMIT 4
-               )) AS media_urls,
-               (SELECT CASE WHEN COUNT(*)=1 THEN MAX(weapon) ELSE NULL END FROM (
-                    SELECT weapon FROM weapon_assignments WHERE to_user=u.id AND discipline='bjj'
-                    GROUP BY weapon HAVING COUNT(*)=(
-                        SELECT MAX(c) FROM (SELECT COUNT(*) c FROM weapon_assignments
-                            WHERE to_user=u.id AND discipline='bjj' GROUP BY weapon)
-                    ))) AS bjj_sig,
-               (SELECT CASE WHEN COUNT(*)=1 THEN MAX(weapon) ELSE NULL END FROM (
-                    SELECT weapon FROM weapon_assignments WHERE to_user=u.id AND discipline='mt'
-                    GROUP BY weapon HAVING COUNT(*)=(
-                        SELECT MAX(c) FROM (SELECT COUNT(*) c FROM weapon_assignments
-                            WHERE to_user=u.id AND discipline='mt' GROUP BY weapon)
-                    ))) AS mt_sig,
-               (SELECT CASE WHEN COUNT(*)=1 THEN MAX(weapon) ELSE NULL END FROM (
-                    SELECT weapon FROM weapon_assignments WHERE to_user=u.id AND discipline='boxing'
-                    GROUP BY weapon HAVING COUNT(*)=(
-                        SELECT MAX(c) FROM (SELECT COUNT(*) c FROM weapon_assignments
-                            WHERE to_user=u.id AND discipline='boxing' GROUP BY weapon)
-                    ))) AS boxing_sig
+               ma.media_urls,
+               wb.sig AS bjj_sig, wm.sig AS mt_sig, wbx.sig AS boxing_sig
         FROM users u
-        LEFT JOIN bjj_progress    b  ON u.id = b.user_id
-        LEFT JOIN mt_progress     m  ON u.id = m.user_id
-        LEFT JOIN boxing_progress bx ON u.id = bx.user_id
+        LEFT JOIN bjj_progress    b   ON u.id = b.user_id
+        LEFT JOIN mt_progress     m   ON u.id = m.user_id
+        LEFT JOIN boxing_progress bx  ON u.id = bx.user_id
+        LEFT JOIN media_agg       ma  ON u.id = ma.subject_id
+        LEFT JOIN wa_sig           wb  ON wb.to_user=u.id AND wb.discipline='bjj'
+        LEFT JOIN wa_sig           wm  ON wm.to_user=u.id AND wm.discipline='mt'
+        LEFT JOIN wa_sig           wbx ON wbx.to_user=u.id AND wbx.discipline='boxing'
         WHERE u.role = 'student' AND u.status = 'approved'
         ORDER BY (u.profile_pic IS NULL), u.name
     ''').fetchall()
