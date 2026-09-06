@@ -22,6 +22,8 @@ def compress(response):
         return response
     if response.status_code < 200 or response.status_code >= 300:
         return response
+    if response.direct_passthrough:
+        return response
     if response.headers.get('Content-Encoding'):
         return response
     ct = response.content_type or ''
